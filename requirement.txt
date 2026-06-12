@@ -1,65 +1,40 @@
-# -------------------------
+# =========================
 # FastAPI Backend
-# -------------------------
+# =========================
 fastapi
 uvicorn
 python-multipart
 pydantic
 python-dotenv
 
-# -------------------------
-# OCR & Image Processing
-# -------------------------
-easyocr
-opencv-python
-pillow
-numpy
-
-# -------------------------
-# AI / RAG
-# -------------------------
+# =========================
+# AI / LLM
+# =========================
+google-generativeai
 langchain
-langchain-community
 langchain-google-genai
+langchain-community
+
+# =========================
+# RAG & Embeddings
+# =========================
 faiss-cpu
 sentence-transformers
 
-# -------------------------
-# Google Gemini
-# -------------------------
-google-generativeai
-
-# -------------------------
-# Database
-# -------------------------
-sqlalchemy
-psycopg2-binary
-
-# -------------------------
+# =========================
 # Data Processing
-# -------------------------
+# =========================
+numpy
 pandas
 scikit-learn
 
-# -------------------------
-# PDF Processing
-# -------------------------
-pymupdf
-pdf2image
+# =========================
+# Database
+# =========================
+sqlalchemy
 
-# -------------------------
+# =========================
 # Utilities
-# -------------------------
+# =========================
 requests
 tqdm
-
-# -------------------------
-# Optional (Diagram/OCR Improvements)
-# -------------------------
-matplotlib
-
-# -------------------------
-# PyTorch (Required by EasyOCR/Sentence Transformers)
-# -------------------------
-torch
-torchvision
