@@ -1,40 +1,77 @@
-# =========================
+# ==========================
+
 # FastAPI Backend
-# =========================
+
+# ==========================
+
 fastapi
 uvicorn
 python-multipart
 pydantic
 python-dotenv
 
-# =========================
-# AI / LLM
-# =========================
+# ==========================
+
+# OCR & Image Processing
+
+# ==========================
+
+easyocr
+opencv-python
+pillow
+numpy
+
+# ==========================
+
+# AI & LLM
+
+# ==========================
+
 google-generativeai
 langchain
-langchain-google-genai
 langchain-community
+langchain-google-genai
 
-# =========================
+# ==========================
+
 # RAG & Embeddings
-# =========================
+
+# ==========================
+
 faiss-cpu
 sentence-transformers
 
-# =========================
+# ==========================
+
+# Database
+
+# ==========================
+
+sqlalchemy
+
+# ==========================
+
+# PDF Processing
+
+# ==========================
+
+pymupdf
+pdf2image
+
+# ==========================
+
 # Data Processing
-# =========================
-numpy
+
+# ==========================
+
 pandas
 scikit-learn
 
-# =========================
-# Database
-# =========================
-sqlalchemy
+# ==========================
 
-# =========================
 # Utilities
-# =========================
+
+# ==========================
+
 requests
 tqdm
