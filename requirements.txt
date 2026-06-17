@@ -1,77 +1,59 @@
 # ==========================
-
 # FastAPI Backend
-
 # ==========================
-
 fastapi
-uvicorn
+uvicorn[standard]
 python-multipart
 pydantic
 python-dotenv
 
 # ==========================
-
-# OCR & Image Processing
+# Async File I/O
+# ==========================
+aiofiles
 
 # ==========================
-
+# OCR & Image Processing
+# ==========================
 easyocr
 opencv-python
 pillow
 numpy
 
 # ==========================
-
 # AI & LLM
-
 # ==========================
-
 google-generativeai
 langchain
 langchain-community
 langchain-google-genai
 
 # ==========================
-
 # RAG & Embeddings
-
 # ==========================
-
 faiss-cpu
 sentence-transformers
 
 # ==========================
-
 # Database
+# ==========================
+sqlalchemy[asyncio]
+aiosqlite
 
 # ==========================
-
-sqlalchemy
-
-# ==========================
-
 # PDF Processing
-
 # ==========================
-
 pymupdf
 pdf2image
 
 # ==========================
-
 # Data Processing
-
 # ==========================
-
 pandas
 scikit-learn
 
 # ==========================
-
 # Utilities
-
 # ==========================
-
 requests
 tqdm
