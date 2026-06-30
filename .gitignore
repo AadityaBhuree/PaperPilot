@@ -1,29 +1,59 @@
-# Ignore Virtual Environments
-.venv/
-.env/
-venv/
-env/
-
-# Ignore Python cache files
-**/__pycache__/
-*.pyc
-
+# ==========================
 # Python
+# ==========================
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
 
-# Environment Variables
+# ==========================
+# Node
+# ==========================
+node_modules/
+
+# ==========================
+# Build / Runtime artifacts
+# ==========================
+frontend/dist/
+frontend/dist-ssr/
+faiss_index/
+uploads/
+
+# ==========================
+# Database
+# ==========================
+*.db
+*.sqlite3
+
+# ==========================
+# Environment / Secrets
+# ==========================
 .env
+.env.local
+.env.*.local
 
-# VS Code
+# ==========================
+# IDE / OS
+# ==========================
 .vscode/
-
-# Uploaded Files
-backend/uploads/*
-
-# Reports
-backend/reports/*
-
-# OS Files
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 .DS_Store
 Thumbs.db
+
+# ==========================
+# Logs
+# ==========================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

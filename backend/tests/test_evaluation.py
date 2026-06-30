@@ -83,6 +83,22 @@ async def test_get_submission_not_found(client):
 
 
 @pytest.mark.asyncio
+async def test_list_submissions_for_exam(client, sample_document, sample_exam):
+    # Create a submission
+    await client.post("/api/evaluation/submissions", json={
+        "document_id": sample_document.id,
+        "exam_id": sample_exam.id,
+        "student_name": "Alice",
+    })
+
+    response = await client.get(f"/api/evaluation/exams/{sample_exam.id}/submissions")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) >= 1
+    assert data[0]["student_name"] == "Alice"
+
+
+@pytest.mark.asyncio
 @patch("backend.api.evaluation.evaluate_answer", new_callable=AsyncMock)
 @patch("backend.api.evaluation.detect_questions", new_callable=AsyncMock)
 @patch("backend.api.evaluation.extract_answers", new_callable=AsyncMock)

@@ -5,9 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
-from pydantic import BaseModel
 
-from backend.services.evaluator_service import EvaluationInput, evaluate_answer
+from backend.services.evaluator_service import CriterionScore, EvaluationInput, evaluate_answer
 from backend.services.question_service import (
     detect_questions,
     extract_answers,
@@ -15,20 +14,25 @@ from backend.services.question_service import (
 
 
 # ---------------------------------------------------------------------------
-# Mock LLM response objects
+# Mock helpers
 # ---------------------------------------------------------------------------
 
 
-class MockDetectedQuestions(BaseModel):
-    questions: list[dict]
+class _MockPrompt:
+    """A mock prompt that returns a fixed chain when used with the | operator.
 
+    Python's `|` operator calls `type(obj).__or__()`, so we need a real class
+    with `__or__` defined — instance-level attribute assignment won't work.
+    """
 
-class MockEvaluationResult(BaseModel):
-    score: float
-    max_score: float
-    feedback: str
-    confidence: float
-    criterion_scores: list[dict]
+    def __init__(self, chain: MagicMock):
+        self._chain = chain
+
+    def __or__(self, other):
+        return self._chain
+
+    def __ror__(self, other):
+        return self._chain
 
 
 # ---------------------------------------------------------------------------
@@ -50,7 +54,7 @@ async def test_evaluate_answer(mock_get_llm):
     mock_result.feedback = "Good answer."
     mock_result.confidence = 0.9
     mock_result.criterion_scores = [
-        MagicMock(criterion="Content", score=8.0, feedback="Accurate")
+        CriterionScore(criterion="Content", score=8.0, feedback="Accurate")
     ]
 
     # Mock the chain: prompt | llm.with_structured_output(schema)
@@ -60,23 +64,10 @@ async def test_evaluate_answer(mock_get_llm):
     mock_chain = MagicMock()
     mock_chain.ainvoke = AsyncMock(return_value=mock_result)
 
-    # The | operator creates a LCEL chain; mock it
-    with patch("backend.services.evaluator_service._EVALUATE_PROMPT") as mock_prompt:
-        mock_prompt.__or__ = MagicMock(return_value=mock_structured_llm)
-        mock_structured_llm.__or__ = MagicMock(return_value=mock_chain)
-        # Actually, the chain is `_EVALUATE_PROMPT | llm.with_structured_output(EvaluationResult)`
-        # which is a RunnableSequence. Let's patch at a higher level.
-        pass
-
-    # Simpler approach: patch the entire chain creation
-    with patch("backend.services.evaluator_service._EVALUATE_PROMPT") as mock_prompt:
-        # Build a mock chain
-        mock_chain = MagicMock()
-        mock_chain.ainvoke = AsyncMock(return_value=mock_result)
-
-        mock_prompt.__or__ = MagicMock(return_value=mock_structured_llm)
-        mock_structured_llm.__or__ = MagicMock(return_value=mock_chain)
-
+    with patch(
+        "backend.services.evaluator_service._EVALUATE_PROMPT",
+        _MockPrompt(mock_chain),
+    ):
         inputs = EvaluationInput(
             question_text="What is calculus?",
             student_answer="Calculus studies change.",
@@ -94,6 +85,11 @@ async def test_evaluate_answer(mock_get_llm):
         assert result["max_score"] == 10.0
         assert result["feedback"] == "Good answer."
         assert result["confidence"] == 0.9
+        scores = json.loads(result["criterion_scores"])
+        assert len(scores) == 1
+        assert scores[0]["criterion"] == "Content"
+        assert scores[0]["score"] == 8.0
+        assert scores[0]["feedback"] == "Accurate"
 
 
 # ---------------------------------------------------------------------------
@@ -120,10 +116,10 @@ async def test_detect_questions(mock_get_llm):
     mock_chain = MagicMock()
     mock_chain.ainvoke = AsyncMock(return_value=mock_result)
 
-    with patch("backend.services.question_service._DETECT_QUESTIONS_PROMPT") as mock_prompt:
-        mock_prompt.__or__ = MagicMock(return_value=mock_structured_llm)
-        mock_structured_llm.__or__ = MagicMock(return_value=mock_chain)
-
+    with patch(
+        "backend.services.question_service._DETECT_QUESTIONS_PROMPT",
+        _MockPrompt(mock_chain),
+    ):
         result = await detect_questions("1. What is 2+2? 2. Define gravity.")
 
         assert len(result) == 2
@@ -149,10 +145,10 @@ async def test_extract_answers(mock_get_llm):
     mock_chain = MagicMock()
     mock_chain.ainvoke = AsyncMock(return_value=mock_result)
 
-    with patch("backend.services.question_service._EXTRACT_ANSWERS_PROMPT") as mock_prompt:
-        mock_prompt.__or__ = MagicMock(return_value=mock_structured_llm)
-        mock_structured_llm.__or__ = MagicMock(return_value=mock_chain)
-
+    with patch(
+        "backend.services.question_service._EXTRACT_ANSWERS_PROMPT",
+        _MockPrompt(mock_chain),
+    ):
         questions = [{"question_number": 1, "question_text": "What is 2+2?"}]
         result = await extract_answers("1. The answer is 4.", questions)
 

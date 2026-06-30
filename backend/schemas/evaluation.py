@@ -4,8 +4,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from backend.models.document import DocumentStatus
-
 
 # ---------------------------------------------------------------------------
 # Submission

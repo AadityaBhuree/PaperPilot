@@ -20,6 +20,64 @@ Create a transparent, explainable, and accessible AI evaluation platform that:
 
 ---
 
+# 🏁 Getting Started
+
+## Prerequisites
+
+* **Python 3.10+**
+* **Node.js 18+**
+* **Google Gemini API key** — get one at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+
+## 1. Clone the repository
+
+```bash
+git clone https://github.com/your-username/PaperPilot.git
+cd PaperPilot
+```
+
+## 2. Backend setup
+
+```bash
+# Create and activate a virtual environment
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+# source .venv/bin/activate   # macOS / Linux
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment variables
+cp .env.example .env
+# Edit .env and add your GEMINI_API_KEY
+
+# Run the backend
+uvicorn backend.main:app --reload
+```
+
+The API docs are available at [http://localhost:8000/docs](http://localhost:8000/docs).
+
+## 3. Frontend setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The app is available at [http://localhost:5173](http://localhost:5173). API requests are proxied to the backend automatically.
+
+## 4. Run tests
+
+```bash
+# Backend tests
+PYTHONPATH=. python -m pytest backend/tests/ -v
+
+# Frontend lint
+cd frontend && npm run lint
+```
+
+---
+
 # ✨ Features
 
 ## 👨‍🏫 Teacher Mode

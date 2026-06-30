@@ -1,13 +1,9 @@
 """Shared test fixtures for PaperPilot backend tests."""
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from backend.api.documents import router as documents_router
-from backend.api.evaluation import router as evaluation_router
-from backend.api.exams import router as exams_router
 from backend.database.connection import get_session
 from backend.main import app
 from backend.models.base import Base
@@ -46,22 +42,13 @@ async def db_session(db_engine):
 
 
 @pytest_asyncio.fixture
-async def client(db_engine):
-    """Async HTTP test client wired to the in-memory database."""
-    session_factory = async_sessionmaker(
-        db_engine, class_=AsyncSession, expire_on_commit=False
-    )
+async def client(db_session: AsyncSession):
+    """Async HTTP test client wired to the same session as test data fixtures."""
 
     async def _override_get_session():
-        async with session_factory() as session:
-            yield session
+        yield db_session
 
     app.dependency_overrides[get_session] = _override_get_session
-    # Clear any previous routers to avoid duplicates on re-import
-    app.routes.clear()
-    app.include_router(documents_router)
-    app.include_router(exams_router)
-    app.include_router(evaluation_router)
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:

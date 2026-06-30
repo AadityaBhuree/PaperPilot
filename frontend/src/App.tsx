@@ -7,11 +7,13 @@ import ExamDetail from './pages/ExamDetail';
 import Upload from './pages/Upload';
 import Documents from './pages/Documents';
 import Evaluation from './pages/Evaluation';
+import MainframeLanding from './pages/MainframeLanding';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/mainframe" element={<MainframeLanding />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/exams" element={<ExamList />} />
