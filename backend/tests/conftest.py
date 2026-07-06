@@ -1,5 +1,8 @@
 """Shared test fixtures for PaperPilot backend tests."""
 
+import os
+os.environ.setdefault("JWT_SECRET", "test-secret-for-ci-only")
+
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine

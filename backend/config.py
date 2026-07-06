@@ -34,11 +34,24 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
     MAX_UPLOAD_SIZE_MB: Annotated[int, Field(ge=1, le=500)] = 20
 
+    # Auth / JWT
+    JWT_SECRET: str = ""
+
     # OCR
     OCR_LANGUAGES: list[str] = ["en"]
     OCR_GPU: bool = False
 
     # --- validators ---
+
+    @field_validator("JWT_SECRET")
+    @classmethod
+    def _ensure_jwt_secret(cls, v: str) -> str:
+        if not v:
+            raise ValueError(
+                "JWT_SECRET environment variable is required. "
+                "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        return v
 
     @field_validator("OCR_LANGUAGES", mode="before")
     @classmethod

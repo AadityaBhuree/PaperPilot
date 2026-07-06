@@ -9,18 +9,24 @@ import type {
   ExamUpdate,
   EvaluateSubmissionResponse,
   EvaluationSummaryResponse,
+  LoginRequest,
   PaginatedResponse,
   QuestionCreate,
   QuestionDetailResponse,
   QuestionResponse,
+  RegisterRequest,
   RubricCreate,
   RubricResponse,
   SubmissionCreate,
   SubmissionResponse,
+  TokenResponse,
   UploadResponse,
+  UserResponse,
 } from './types';
 
-const api = axios.create({
+export type { LoginRequest, RegisterRequest, TokenResponse, UserResponse };
+
+export const api = axios.create({
   baseURL: '/api',
   headers: { 'Content-Type': 'application/json' },
 });

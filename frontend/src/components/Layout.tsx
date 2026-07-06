@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   FileText,
@@ -7,7 +7,9 @@ import {
   ClipboardCheck,
   GraduationCap,
   Menu,
+  LogOut,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -18,6 +20,8 @@ const navItems = [
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const closeSidebar = () => setSidebarOpen(false);
 
@@ -70,10 +74,27 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200">
-          <p className="text-xs text-gray-400">PaperPilot v0.1.0</p>
-        </div>
+        {/* User info */}
+        {user && (
+          <div className="px-6 py-4 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{user.display_name}</p>
+                <p className="text-xs text-gray-400 truncate">{user.email}</p>
+              </div>
+              <button
+                onClick={() => {
+                  logout();
+                  navigate('/login');
+                }}
+                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* Main content area */}

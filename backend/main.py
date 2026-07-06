@@ -12,6 +12,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from backend.config import settings
 from backend.database.connection import init_db
+from backend.api.auth import router as auth_router
 from backend.api.documents import router as documents_router
 from backend.api.exams import router as exams_router
 from backend.api.evaluation import router as evaluation_router
@@ -53,6 +54,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 app.add_middleware(SlowAPIMiddleware)
 
+app.include_router(auth_router)
 app.include_router(documents_router)
 app.include_router(exams_router)
 app.include_router(evaluation_router)

@@ -54,6 +54,12 @@ pandas
 scikit-learn
 
 # ==========================
+# Auth / JWT
+# ==========================
+python-jose[cryptography]
+passlib[bcrypt]
+
+# ==========================
 # Utilities
 # ==========================
 requests

@@ -31,6 +31,12 @@ from backend.schemas.evaluation import (
     SubmissionCreate,
     SubmissionResponse,
 )
+from backend.schemas.auth import (
+    LoginRequest,
+    RegisterRequest,
+    TokenResponse,
+    UserResponse,
+)
 from backend.schemas.pagination import PaginatedResponse, PaginationParams
 
 __all__ = [
@@ -59,6 +65,10 @@ __all__ = [
     "QuestionSummary",
     "SubmissionCreate",
     "SubmissionResponse",
+    "RegisterRequest",
+    "LoginRequest",
+    "TokenResponse",
+    "UserResponse",
     "PaginatedResponse",
     "PaginationParams",
 ]

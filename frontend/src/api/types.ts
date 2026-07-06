@@ -173,6 +173,33 @@ export interface EvaluationSummaryResponse {
   evaluations: EvaluationResponse[];
 }
 
+// --- Auth ---
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  display_name: string;
+  role: string;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+}
+
+export interface UserResponse {
+  id: string;
+  email: string;
+  display_name: string;
+  role: string;
+  created_at: string;
+}
+
 // --- Pagination ---
 
 export interface PaginatedResponse<T> {
