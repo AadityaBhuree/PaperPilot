@@ -3,6 +3,8 @@ import { FileText, Trash2, RefreshCw, Eye } from 'lucide-react';
 import { listDocuments, deleteDocument, processDocument } from '../api/client';
 import type { DocumentResponse, DocumentStatus } from '../api/types';
 import { Skeleton } from '../components/Skeleton';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/Toast';
 
 const statusColors: Record<DocumentStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -15,15 +17,17 @@ export default function Documents() {
   const [docs, setDocs] = useState<DocumentResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DocumentResponse | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     listDocuments().then(setDocs).finally(() => setLoading(false));
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this document and its OCR results?')) return;
     await deleteDocument(id);
     setDocs((prev) => prev.filter((d) => d.id !== id));
+    toast('success', 'Document deleted successfully');
   };
 
   const handleProcess = async (id: string) => {
@@ -112,7 +116,7 @@ export default function Documents() {
                     <Eye className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(doc.id)}
+                    onClick={() => setDeleteTarget(doc)}
                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     title="Delete document"
                   >
@@ -150,6 +154,21 @@ export default function Documents() {
           ))}
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete Document"
+        message={`Are you sure you want to delete "${deleteTarget?.original_filename ?? ''}" and its OCR results? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={() => {
+          if (deleteTarget) handleDelete(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

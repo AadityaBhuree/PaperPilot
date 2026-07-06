@@ -4,20 +4,24 @@ import { Plus, Trash2, ArrowRight, ClipboardCheck } from 'lucide-react';
 import { listExams, deleteExam } from '../api/client';
 import type { ExamResponse } from '../api/types';
 import { Skeleton } from '../components/Skeleton';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../components/Toast';
 
 export default function ExamList() {
   const [exams, setExams] = useState<ExamResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<ExamResponse | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     listExams().then(setExams).finally(() => setLoading(false));
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this exam and all its questions?')) return;
     await deleteExam(id);
     setExams((prev) => prev.filter((e) => e.id !== id));
+    toast('success', 'Exam deleted successfully');
   };
 
   if (loading) {
@@ -84,7 +88,7 @@ export default function ExamList() {
                 </Link>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handleDelete(exam.id)}
+                    onClick={() => setDeleteTarget(exam)}
                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     title="Delete exam"
                   >
@@ -102,6 +106,21 @@ export default function ExamList() {
           ))}
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete Exam"
+        message={`Are you sure you want to delete "${deleteTarget?.title ?? ''}" and all its questions? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={() => {
+          if (deleteTarget) handleDelete(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
