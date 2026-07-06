@@ -1,33 +1,56 @@
-"""Application configuration loaded from environment variables."""
+"""Application configuration loaded from environment variables.
 
-import os
+Uses pydantic-settings for automatic type coercion and validation.
+"""
 
-from dotenv import load_dotenv
+from typing import Annotated
 
-load_dotenv()
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings:
-    APP_NAME: str = os.getenv("APP_NAME", "PaperPilot")
-    APP_VERSION: str = os.getenv("APP_VERSION", "0.1.0")
-    DEBUG: bool = os.getenv("DEBUG", "False") == "True"
+class Settings(BaseSettings):
+    """All application settings, loaded from environment variables / .env file."""
 
-    # AI / LLM
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-
-    # Database — use aiosqlite for async SQLite support
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "sqlite+aiosqlite:///paperpilot.db",
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
     )
 
+    # Application
+    APP_NAME: str = "PaperPilot"
+    APP_VERSION: str = "0.1.0"
+    DEBUG: bool = False
+
+    # AI / LLM
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-1.5-flash"
+
+    # Database
+    DATABASE_URL: str = "sqlite+aiosqlite:///paperpilot.db"
+
     # File uploads
-    UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "uploads")
-    MAX_UPLOAD_SIZE_MB: int = int(os.getenv("MAX_UPLOAD_SIZE_MB", "20"))
+    UPLOAD_DIR: str = "uploads"
+    MAX_UPLOAD_SIZE_MB: Annotated[int, Field(ge=1, le=500)] = 20
 
     # OCR
-    OCR_LANGUAGES: list[str] = os.getenv("OCR_LANGUAGES", "en").split(",")
-    OCR_GPU: bool = os.getenv("OCR_GPU", "False") == "True"
+    OCR_LANGUAGES: list[str] = ["en"]
+    OCR_GPU: bool = False
+
+    # --- validators ---
+
+    @field_validator("OCR_LANGUAGES", mode="before")
+    @classmethod
+    def _split_ocr_languages(cls, v: object) -> list[str]:
+        """Accept a comma-separated string from the .env file."""
+        if isinstance(v, str):
+            return [lang.strip() for lang in v.split(",") if lang.strip()]
+        # pydantic-settings may already parse it as a list from JSON
+        if isinstance(v, list):
+            return [str(lang).strip() for lang in v if lang]
+        return ["en"]
 
 
 settings = Settings()
+

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { listExams, listDocuments } from '../api/client';
 import type { ExamResponse, DocumentResponse } from '../api/types';
+import { Skeleton } from '../components/Skeleton';
 
 export default function Dashboard() {
   const [exams, setExams] = useState<ExamResponse[]>([]);
@@ -28,8 +29,20 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-400 text-lg">Loading dashboard...</div>
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <Skeleton.Line className="w-48 h-8" />
+          <Skeleton.Line className="w-72" />
+        </div>
+        <Skeleton.StatsGrid />
+        <div className="flex gap-4">
+          <Skeleton.Block className="w-36 h-10 rounded-lg" />
+          <Skeleton.Block className="w-40 h-10 rounded-lg" />
+        </div>
+        <div className="space-y-3">
+          <Skeleton.Line className="w-32 h-6" />
+          <Skeleton.List count={3} />
+        </div>
       </div>
     );
   }

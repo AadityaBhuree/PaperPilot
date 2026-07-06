@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import ExamList from './pages/ExamList';
@@ -11,19 +12,21 @@ import MainframeLanding from './pages/MainframeLanding';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/mainframe" element={<MainframeLanding />} />
-        <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/exams" element={<ExamList />} />
-          <Route path="/exams/new" element={<ExamForm />} />
-          <Route path="/exams/:id" element={<ExamDetail />} />
-          <Route path="/upload" element={<Upload />} />
-          <Route path="/documents" element={<Documents />} />
-          <Route path="/evaluate" element={<Evaluation />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/mainframe" element={<MainframeLanding />} />
+          <Route element={<Layout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/exams" element={<ExamList />} />
+            <Route path="/exams/new" element={<ExamForm />} />
+            <Route path="/exams/:id" element={<ExamDetail />} />
+            <Route path="/upload" element={<Upload />} />
+            <Route path="/documents" element={<Documents />} />
+            <Route path="/evaluate" element={<Evaluation />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }

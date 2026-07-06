@@ -41,7 +41,7 @@ class _MockPrompt:
 
 
 @pytest.mark.asyncio
-@patch("backend.services.evaluator_service._get_llm")
+@patch("backend.services.evaluator_service.get_llm")
 async def test_evaluate_answer(mock_get_llm):
     """Test that evaluate_answer calls the LLM chain and returns structured output."""
     mock_llm = MagicMock()
@@ -98,7 +98,7 @@ async def test_evaluate_answer(mock_get_llm):
 
 
 @pytest.mark.asyncio
-@patch("backend.services.question_service._get_llm")
+@patch("backend.services.question_service.get_llm")
 async def test_detect_questions(mock_get_llm):
     """Test that detect_questions calls the LLM and returns structured results."""
     mock_llm = MagicMock()
@@ -128,7 +128,7 @@ async def test_detect_questions(mock_get_llm):
 
 
 @pytest.mark.asyncio
-@patch("backend.services.question_service._get_llm")
+@patch("backend.services.question_service.get_llm")
 async def test_extract_answers(mock_get_llm):
     """Test that extract_answers calls the LLM and returns structured results."""
     mock_llm = MagicMock()

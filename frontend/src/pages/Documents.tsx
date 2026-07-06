@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { FileText, Trash2, RefreshCw, Eye } from 'lucide-react';
 import { listDocuments, deleteDocument, processDocument } from '../api/client';
 import type { DocumentResponse, DocumentStatus } from '../api/types';
+import { Skeleton } from '../components/Skeleton';
 
 const statusColors: Record<DocumentStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -49,8 +50,12 @@ export default function Documents() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-400 text-lg">Loading documents...</div>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton.Line className="w-48 h-8" />
+          <Skeleton.Line className="w-64" />
+        </div>
+        <Skeleton.List count={4} />
       </div>
     );
   }

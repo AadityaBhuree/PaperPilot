@@ -19,6 +19,7 @@ import type {
   EvaluateSubmissionResponse,
   EvaluationResponse,
 } from '../api/types';
+import { Skeleton } from '../components/Skeleton';
 
 export default function Evaluation() {
   const navigate = useNavigate();
@@ -32,12 +33,14 @@ export default function Evaluation() {
   const [error, setError] = useState('');
   const [result, setResult] = useState<EvaluateSubmissionResponse | null>(null);
 
+  const [initialLoading, setInitialLoading] = useState(true);
+
   // Load data on mount
   useEffect(() => {
     Promise.all([listDocuments(), listExams()]).then(([d, e]) => {
       setDocuments(d);
       setExams(e);
-    });
+    }).finally(() => setInitialLoading(false));
   }, []);
 
   const handleEvaluate = async () => {
@@ -67,6 +70,18 @@ export default function Evaluation() {
       setLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton.Line className="w-56 h-8" />
+          <Skeleton.Line className="w-72" />
+        </div>
+        <Skeleton.Card />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

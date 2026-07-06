@@ -57,3 +57,5 @@ scikit-learn
 # ==========================
 requests
 tqdm
+pydantic-settings
+

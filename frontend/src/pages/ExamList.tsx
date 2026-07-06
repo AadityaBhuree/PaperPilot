@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Trash2, ArrowRight, ClipboardCheck } from 'lucide-react';
 import { listExams, deleteExam } from '../api/client';
 import type { ExamResponse } from '../api/types';
+import { Skeleton } from '../components/Skeleton';
 
 export default function ExamList() {
   const [exams, setExams] = useState<ExamResponse[]>([]);
@@ -21,8 +22,15 @@ export default function ExamList() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-400 text-lg">Loading exams...</div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton.Line className="w-32 h-8" />
+            <Skeleton.Line className="w-48" />
+          </div>
+          <Skeleton.Block className="w-28 h-10 rounded-lg" />
+        </div>
+        <Skeleton.List count={4} />
       </div>
     );
   }

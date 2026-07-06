@@ -17,6 +17,7 @@ import type {
   ExamDetailResponse,
   QuestionDetailResponse,
 } from '../api/types';
+import { Skeleton } from '../components/Skeleton';
 
 export default function ExamDetail() {
   const { id } = useParams<{ id: string }>();
@@ -57,8 +58,10 @@ export default function ExamDetail() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-400 text-lg">Loading exam...</div>
+      <div className="space-y-6">
+        <Skeleton.DetailHeader />
+        <Skeleton.Block className="w-full h-20 rounded-xl" />
+        <Skeleton.List count={3} />
       </div>
     );
   }
