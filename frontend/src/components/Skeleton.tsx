@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 /**
  * Skeleton loading placeholders for consistent loading UX.
  *
