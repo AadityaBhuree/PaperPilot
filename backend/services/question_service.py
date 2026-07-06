@@ -4,10 +4,10 @@ import json
 import logging
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
 
 from backend.config import settings
+from backend.services.ai_config import get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -43,19 +43,6 @@ class ExtractedAnswers(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# LLM setup
-# ---------------------------------------------------------------------------
-
-def _get_llm() -> ChatGoogleGenerativeAI:
-    """Return a Gemini LLM instance configured from app settings."""
-    return ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
-        google_api_key=settings.GEMINI_API_KEY,
-        temperature=0.0,
-    )
-
-
-# ---------------------------------------------------------------------------
 # Question detection
 # ---------------------------------------------------------------------------
 
@@ -81,7 +68,7 @@ async def detect_questions(ocr_text: str) -> list[dict[str, object]]:
 
     Returns a list of dicts with keys: question_number, question_text.
     """
-    llm = _get_llm()
+    llm = get_llm(temperature=0.0)
     chain = _DETECT_QUESTIONS_PROMPT | llm.with_structured_output(DetectedQuestions)
 
     logger.info("Detecting questions from OCR text (%d chars)", len(ocr_text))
@@ -125,7 +112,7 @@ async def extract_answers(
 
     Returns a list of dicts with keys: question_number, answer_text.
     """
-    llm = _get_llm()
+    llm = get_llm(temperature=0.0)
     chain = _EXTRACT_ANSWERS_PROMPT | llm.with_structured_output(ExtractedAnswers)
 
     questions_json = json.dumps(questions, indent=2)

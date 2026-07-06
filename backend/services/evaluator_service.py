@@ -5,10 +5,10 @@ import logging
 from dataclasses import dataclass
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
 
 from backend.config import settings
+from backend.services.ai_config import get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -37,19 +37,6 @@ class EvaluationResult(BaseModel):
     )
     criterion_scores: list[CriterionScore] = Field(
         description="Per-criterion scoring breakdown"
-    )
-
-
-# ---------------------------------------------------------------------------
-# LLM setup
-# ---------------------------------------------------------------------------
-
-def _get_llm() -> ChatGoogleGenerativeAI:
-    """Return a Gemini LLM instance configured from app settings."""
-    return ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
-        google_api_key=settings.GEMINI_API_KEY,
-        temperature=0.1,
     )
 
 
@@ -105,7 +92,7 @@ async def evaluate_answer(inputs: EvaluationInput) -> dict[str, object]:
     Returns:
         Dict with keys: score, max_score, feedback, confidence, criterion_scores.
     """
-    llm = _get_llm()
+    llm = get_llm(temperature=0.1)
     chain = _EVALUATE_PROMPT | llm.with_structured_output(EvaluationResult)
 
     # Format rubric as readable text
