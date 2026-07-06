@@ -31,6 +31,7 @@ from backend.schemas.evaluation import (
     SubmissionCreate,
     SubmissionResponse,
 )
+from backend.schemas.pagination import PaginatedResponse, PaginationParams
 
 __all__ = [
     "UploadResponse",
@@ -58,4 +59,6 @@ __all__ = [
     "QuestionSummary",
     "SubmissionCreate",
     "SubmissionResponse",
+    "PaginatedResponse",
+    "PaginationParams",
 ]

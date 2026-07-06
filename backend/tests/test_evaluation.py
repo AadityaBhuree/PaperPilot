@@ -94,8 +94,8 @@ async def test_list_submissions_for_exam(client, sample_document, sample_exam):
     response = await client.get(f"/api/evaluation/exams/{sample_exam.id}/submissions")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) >= 1
-    assert data[0]["student_name"] == "Alice"
+    assert data["total"] >= 1
+    assert data["items"][0]["student_name"] == "Alice"
 
 
 @pytest.mark.asyncio
@@ -263,7 +263,7 @@ async def test_list_submissions_for_exam(client, sample_document, sample_exam):
     response = await client.get(f"/api/evaluation/exams/{sample_exam.id}/submissions")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) >= 1
+    assert data["total"] >= 1
 
 
 @pytest.mark.asyncio

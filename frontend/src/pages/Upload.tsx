@@ -14,7 +14,7 @@ export default function Upload() {
 
   // Load exams on mount
   useEffect(() => {
-    listExams().then(setExams);
+    listExams(1, 100).then((r) => setExams(r.items));
   }, []);
 
   const handleDrag = useCallback((e: React.DragEvent) => {

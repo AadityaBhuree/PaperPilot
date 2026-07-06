@@ -5,7 +5,7 @@ import logging
 from collections import defaultdict
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -26,6 +26,7 @@ from backend.schemas.evaluation import (
     SubmissionCreate,
     SubmissionResponse,
 )
+from backend.schemas.pagination import PaginatedResponse, PaginationParams, build_paginated_response
 from backend.services.evaluator_service import EvaluationInput, evaluate_answer
 from backend.services.file_service import get_file_path
 from backend.services.ocr_service import process_document
@@ -90,20 +91,32 @@ async def get_submission(
 
 @router.get(
     "/exams/{exam_id}/submissions",
-    response_model=list[SubmissionResponse],
+    response_model=PaginatedResponse[SubmissionResponse],
 )
 async def list_submissions_for_exam(
     exam_id: str,
+    p: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_session),
-) -> list[SubmissionResponse]:
-    """List all submissions for a given exam."""
+) -> PaginatedResponse[SubmissionResponse]:
+    """List submissions for a given exam with pagination."""
+    count_result = await db.execute(
+        select(func.count())
+        .select_from(StudentSubmission)
+        .where(StudentSubmission.exam_id == exam_id)
+    )
+    total = count_result.scalar() or 0
+
     result = await db.execute(
         select(StudentSubmission)
         .where(StudentSubmission.exam_id == exam_id)
         .order_by(StudentSubmission.submitted_at.desc())
+        .offset(p.offset)
+        .limit(p.page_size)
     )
     subs = result.scalars().all()
-    return [SubmissionResponse.model_validate(s) for s in subs]
+    items = [SubmissionResponse.model_validate(s) for s in subs]
+
+    return build_paginated_response(items, total, p)
 
 
 # ---------------------------------------------------------------------------

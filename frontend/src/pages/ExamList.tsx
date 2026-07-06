@@ -15,7 +15,7 @@ export default function ExamList() {
   const { toast } = useToast();
 
   useEffect(() => {
-    listExams().then(setExams).finally(() => setLoading(false));
+    listExams(1, 100).then((r) => setExams(r.items)).finally(() => setLoading(false));
   }, []);
 
   const handleDelete = async (id: string) => {

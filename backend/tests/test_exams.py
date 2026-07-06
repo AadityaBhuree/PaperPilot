@@ -34,8 +34,10 @@ async def test_list_exams(client, sample_exam):
     response = await client.get("/api/exams/")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) >= 1
-    assert data[0]["title"] == "Midterm Exam"
+    assert data["total"] >= 1
+    assert data["items"][0]["title"] == "Midterm Exam"
+    assert data["page"] == 1
+    assert data["total_pages"] >= 1
 
 
 @pytest.mark.asyncio

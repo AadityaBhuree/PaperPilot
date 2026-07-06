@@ -17,10 +17,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([listExams(), listDocuments()])
+    Promise.all([listExams(1, 100), listDocuments(1, 100)])
       .then(([e, d]) => {
-        setExams(e);
-        setDocuments(d);
+        setExams(e.items);
+        setDocuments(d.items);
       })
       .finally(() => setLoading(false));
   }, []);

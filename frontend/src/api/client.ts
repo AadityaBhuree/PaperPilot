@@ -9,6 +9,7 @@ import type {
   ExamUpdate,
   EvaluateSubmissionResponse,
   EvaluationSummaryResponse,
+  PaginatedResponse,
   QuestionCreate,
   QuestionDetailResponse,
   QuestionResponse,
@@ -35,8 +36,8 @@ export async function uploadDocument(file: File): Promise<UploadResponse> {
   return data;
 }
 
-export async function listDocuments(): Promise<DocumentResponse[]> {
-  const { data } = await api.get<DocumentResponse[]>('/documents/');
+export async function listDocuments(page = 1, pageSize = 20): Promise<PaginatedResponse<DocumentResponse>> {
+  const { data } = await api.get<PaginatedResponse<DocumentResponse>>('/documents/', { params: { page, pageSize } });
   return data;
 }
 
@@ -61,8 +62,8 @@ export async function createExam(body: ExamCreate): Promise<ExamResponse> {
   return data;
 }
 
-export async function listExams(): Promise<ExamResponse[]> {
-  const { data } = await api.get<ExamResponse[]>('/exams/');
+export async function listExams(page = 1, pageSize = 20): Promise<PaginatedResponse<ExamResponse>> {
+  const { data } = await api.get<PaginatedResponse<ExamResponse>>('/exams/', { params: { page, pageSize } });
   return data;
 }
 
@@ -144,6 +145,11 @@ export async function listRubrics(
 }
 
 // --- Submissions & Evaluation ---
+
+export async function listSubmissionsForExam(examId: string, page = 1, pageSize = 20): Promise<PaginatedResponse<SubmissionResponse>> {
+  const { data } = await api.get<PaginatedResponse<SubmissionResponse>>(`/evaluation/exams/${examId}/submissions`, { params: { page, pageSize } });
+  return data;
+}
 
 export async function createSubmission(body: SubmissionCreate): Promise<SubmissionResponse> {
   const { data } = await api.post<SubmissionResponse>('/evaluation/submissions', body);

@@ -37,9 +37,9 @@ export default function Evaluation() {
 
   // Load data on mount
   useEffect(() => {
-    Promise.all([listDocuments(), listExams()]).then(([d, e]) => {
-      setDocuments(d);
-      setExams(e);
+    Promise.all([listDocuments(1, 100), listExams(1, 100)]).then(([d, e]) => {
+      setDocuments(d.items);
+      setExams(e.items);
     }).finally(() => setInitialLoading(false));
   }, []);
 

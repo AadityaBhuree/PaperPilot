@@ -21,7 +21,7 @@ export default function Documents() {
   const { toast } = useToast();
 
   useEffect(() => {
-    listDocuments().then(setDocs).finally(() => setLoading(false));
+    listDocuments(1, 100).then((r) => setDocs(r.items)).finally(() => setLoading(false));
   }, []);
 
   const handleDelete = async (id: string) => {
@@ -37,8 +37,8 @@ export default function Documents() {
     try {
       await processDocument(id);
       // Refresh the document
-      const updated = await listDocuments();
-      setDocs(updated);
+      const updated = await listDocuments(1, 100);
+      setDocs(updated.items);
     } catch {
       setDocs((prev) =>
         prev.map((d) => (d.id === id ? { ...d, status: 'failed' as const } : d)),

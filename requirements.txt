@@ -39,6 +39,7 @@ sentence-transformers
 # ==========================
 sqlalchemy[asyncio]
 aiosqlite
+asyncpg
 
 # ==========================
 # PDF Processing
@@ -58,4 +59,7 @@ scikit-learn
 requests
 tqdm
 pydantic-settings
+alembic
+slowapi
+
 

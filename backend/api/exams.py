@@ -3,7 +3,7 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -22,6 +22,7 @@ from backend.schemas.exam import (
     RubricCreate,
     RubricResponse,
 )
+from backend.schemas.pagination import PaginatedResponse, PaginationParams, build_paginated_response
 
 logger = logging.getLogger(__name__)
 
@@ -50,14 +51,27 @@ async def create_exam(
     return ExamResponse.model_validate(exam)
 
 
-@router.get("/", response_model=list[ExamResponse])
+@router.get("/", response_model=PaginatedResponse[ExamResponse])
 async def list_exams(
+    p: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_session),
-) -> list[ExamResponse]:
-    """List all exams."""
-    result = await db.execute(select(Exam).order_by(Exam.created_at.desc()))
+) -> PaginatedResponse[ExamResponse]:
+    """List all exams with pagination."""
+    count_result = await db.execute(
+        select(func.count()).select_from(Exam)
+    )
+    total = count_result.scalar() or 0
+
+    result = await db.execute(
+        select(Exam)
+        .order_by(Exam.created_at.desc())
+        .offset(p.offset)
+        .limit(p.page_size)
+    )
     exams = result.scalars().all()
-    return [ExamResponse.model_validate(e) for e in exams]
+    items = [ExamResponse.model_validate(e) for e in exams]
+
+    return build_paginated_response(items, total, p)
 
 
 @router.get("/{exam_id}", response_model=ExamDetailResponse)

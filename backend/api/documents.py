@@ -3,7 +3,7 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.connection import get_session
@@ -14,6 +14,7 @@ from backend.schemas.document import (
     OCRResultResponse,
     UploadResponse,
 )
+from backend.schemas.pagination import PaginatedResponse, PaginationParams, build_paginated_response
 from backend.services.file_service import save_upload, get_file_path, delete_file
 from backend.services.ocr_service import process_document
 
@@ -113,16 +114,29 @@ async def get_document(
     return DocumentResponse.model_validate(doc)
 
 
-@router.get("/", response_model=list[DocumentResponse])
+@router.get("/", response_model=PaginatedResponse[DocumentResponse])
 async def list_documents(
+    p: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_session),
-) -> list[DocumentResponse]:
-    """List all uploaded documents."""
+) -> PaginatedResponse[DocumentResponse]:
+    """List uploaded documents with pagination."""
+    # Count total
+    count_result = await db.execute(
+        select(func.count()).select_from(UploadedDocument)
+    )
+    total = count_result.scalar() or 0
+
+    # Fetch page
     result = await db.execute(
-        select(UploadedDocument).order_by(UploadedDocument.uploaded_at.desc())
+        select(UploadedDocument)
+        .order_by(UploadedDocument.uploaded_at.desc())
+        .offset(p.offset)
+        .limit(p.page_size)
     )
     docs = result.scalars().all()
-    return [DocumentResponse.model_validate(d) for d in docs]
+    items = [DocumentResponse.model_validate(d) for d in docs]
+
+    return build_paginated_response(items, total, p)
 
 
 @router.delete("/{document_id}", status_code=204)
