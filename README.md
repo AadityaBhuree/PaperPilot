@@ -2,21 +2,50 @@
 
 > **Fair. Explainable. AI-Powered Evaluation.**
 
-PaperPilot is an open-source AI-powered exam evaluation and learning platform designed for both **teachers** and **students**.
-
-It helps teachers reduce manual grading effort through explainable AI-assisted evaluation while helping students prepare for exams with detailed feedback, mock tests, and personalized learning insights.
+PaperPilot is an open-source AI-powered exam evaluation platform. It uses OCR and LLMs (Google Gemini) to automatically grade answer sheets against rubrics, providing explainable scores and detailed feedback.
 
 ---
 
-# 🚀 Vision
+# ✨ Features
 
-Create a transparent, explainable, and accessible AI evaluation platform that:
+## Current
+- 📝 **Exam Management** — Create exams, add questions, define answer keys and rubrics
+- 📄 **Document Upload & OCR** — Upload PDF/JPG/PNG answer sheets; auto-extract text via EasyOCR
+- 🤖 **AI Evaluation** — Grade answers against rubrics using Google Gemini; per-criterion scoring
+- 📊 **Exam Summary Reports** — Per-question averages, score distributions, highest/lowest performers
+- 📋 **Evaluation History** — Browse past evaluations with search, filter, and pagination
+- 🔄 **Batch Evaluation** — Evaluate multiple submissions with progress tracking
+- 🔐 **Authentication** — JWT-based login/register; teacher & student roles
+- 📱 **Responsive UI** — Mobile-friendly sidebar, skeleton loading, toast notifications
 
-* Reduces teacher workload
-* Provides fair and unbiased evaluation
-* Gives students meaningful feedback instead of only marks
-* Supports handwritten and digital answer sheets
-* Encourages learning through explanation rather than memorization
+## Planned
+- 📥 Export reports (CSV/PDF)
+- 🧑‍🎓 Student mock exam mode
+- 📈 Dashboard analytics & charts
+- 🌙 Dark mode
+- 🌍 Multi-language OCR support
+
+---
+
+# 🧠 Evaluation Pipeline
+
+```
+Upload Answer Sheet
+       ↓
+OCR & Document Processing
+       ↓
+Question Detection
+       ↓
+Answer Extraction
+       ↓
+Reference Answer Retrieval (via RAG)
+       ↓
+Rubric-Based AI Evaluation
+       ↓
+Explainable Score Generation
+       ↓
+Results View / Summary Reports
+```
 
 ---
 
@@ -24,18 +53,20 @@ Create a transparent, explainable, and accessible AI evaluation platform that:
 
 ## Prerequisites
 
-* **Python 3.10+**
-* **Node.js 18+**
-* **Google Gemini API key** — get one at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+| Tool | Version |
+|------|---------|
+| Python | 3.10+ |
+| Node.js | 18+ |
+| Google Gemini API key | [Get one free](https://aistudio.google.com/apikey) |
 
-## 1. Clone the repository
+## 1. Clone & set up
 
 ```bash
 git clone https://github.com/your-username/PaperPilot.git
 cd PaperPilot
 ```
 
-## 2. Backend setup
+## 2. Backend
 
 ```bash
 # Create and activate a virtual environment
@@ -46,17 +77,20 @@ python -m venv .venv
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure environment variables
-cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
+# Set env vars
+set GEMINI_API_KEY=your_key_here   # Windows
+# export GEMINI_API_KEY=your_key_here  # macOS / Linux
 
-# Run the backend
+# Run migrations (first time)
+alembic upgrade head
+
+# Start the API server
 uvicorn backend.main:app --reload
 ```
 
 The API docs are available at [http://localhost:8000/docs](http://localhost:8000/docs).
 
-## 3. Frontend setup
+## 3. Frontend
 
 ```bash
 cd frontend
@@ -69,222 +103,76 @@ The app is available at [http://localhost:5173](http://localhost:5173). API requ
 ## 4. Run tests
 
 ```bash
-# Backend tests
+# Backend (29 tests)
 PYTHONPATH=. python -m pytest backend/tests/ -v
 
-# Frontend lint
-cd frontend && npm run lint
+# Frontend typecheck + lint
+cd frontend && npx tsc --noEmit && npm run lint
 ```
 
 ---
 
-# ✨ Features
+# 🏗️ Tech Stack
 
-## 👨‍🏫 Teacher Mode
-
-* Create exams
-* Upload question papers
-* Upload answer keys
-* Define grading rubrics
-* Batch evaluate answer sheets
-* AI-assisted grading
-* Explainable mark deductions
-* Teacher review and override
-* Export reports
-
----
-
-## 👨‍🎓 Student Mode (Planned)
-
-* Take mock exams
-* Upload handwritten answers
-* AI evaluation
-* Compare with ideal answers
-* View missing concepts
-* Track performance
-* Personalized revision suggestions
-* Weak-topic analysis
+| Layer | Technology |
+|-------|-----------|
+| Backend | FastAPI (Python) + SQLAlchemy 2.0 async |
+| Database | SQLite (dev) → PostgreSQL (planned) |
+| AI / LLM | Google Gemini 1.5 Flash + LangChain |
+| OCR | EasyOCR + PyMuPDF + OpenCV |
+| Vector Search | FAISS + Sentence Transformers |
+| Frontend | React 19 + TypeScript 6 + Tailwind CSS 4 |
+| State | React Context (auth, toasts) |
+| Auth | JWT (access + refresh tokens) |
+| CI | GitHub Actions (frontend lint+build, backend pytest) |
 
 ---
 
-# 📄 Supported Input Formats
+# 📂 Project Structure
 
-* PDF
-* JPG
-* JPEG
-* PNG
-
-Future:
-
-* DOCX
-* Multi-page scanned documents
-
----
-
-# 🧠 Evaluation Pipeline
-
-Upload Answer Sheet
-
-↓
-
-OCR & Document Processing
-
-↓
-
-Question Detection
-
-↓
-
-Answer Extraction
-
-↓
-
-Reference Answer Retrieval
-
-↓
-
-Rubric-Based AI Evaluation
-
-↓
-
-Explainable Score Generation
-
-↓
-
-Teacher Review
-
-↓
-
-Final Report
-
----
-
-# 🎯 Core Principles
-
-* Explainable AI
-* Fair evaluation
-* Human-in-the-loop review
-* Rubric-based grading
-* Transparent mark deductions
-* Privacy-conscious design
-
----
-
-# 🛠️ Planned Tech Stack
-
-## Backend
-
-* FastAPI
-* Python
-
-## AI
-
-* Google Gemini
-* LangChain
-* Sentence Transformers
-
-## OCR
-
-* EasyOCR
-* OpenCV
-
-## Vector Search
-
-* FAISS
-
-## Database
-
-* PostgreSQL
-* SQLAlchemy
-
-## Frontend
-
-* React
-* Tailwind CSS
-
----
-
-# 📂 Proposed Project Structure
-
+```
 PaperPilot/
-
 ├── backend/
-
-│ ├── api/
-
-│ ├── evaluator/
-
-│ ├── rag/
-
-│ ├── ocr/
-
-│ ├── database/
-
-│ ├── models/
-
-│ ├── uploads/
-
-│ └── main.py
-
-│
-
+│   ├── api/           # FastAPI route handlers
+│   ├── database/      # SQLAlchemy engine + sessions
+│   ├── middleware/     # Rate limiter
+│   ├── models/        # ORM models (User, Exam, Document, Evaluation, …)
+│   ├── schemas/       # Pydantic request/response schemas
+│   ├── services/      # AI evaluation, OCR, RAG, file management
+│   ├── tests/         # 29 pytest tests (mocked LLM)
+│   ├── config.py      # Env-based settings
+│   └── main.py        # FastAPI entry point
 ├── frontend/
-
-├── docs/
-
-├── tests/
-
-├── README.md
-
+│   └── src/
+│       ├── api/       # Axios client + TypeScript types
+│       ├── components/# Layout, Skeleton, Toast, Pagination, …
+│       ├── context/   # AuthContext, ToastContext
+│       └── pages/     # 13 route pages
+├── alembic/           # Database migrations
+├── .github/workflows/ # CI pipeline
 └── requirements.txt
+```
 
 ---
 
 # 🗺️ Development Roadmap
 
-## Phase 1
+**Phase 5 (Next — ~2 weeks):** Production hardening
+- PostgreSQL support + Docker setup
+- User data isolation (scope exams/documents to user)
+- File magic-byte validation
+- `.env.example` + `pydantic-settings`
+- Health check details + request logging middleware
+- Fix `index.html` title, remove MainframeLanding route
 
-* File upload
-* OCR integration
-* Text extraction
-
-## Phase 2
-
-* Question detection
-* Answer extraction
-* Rubric support
-
-## Phase 3
-
-* AI evaluation engine
-* Explainable scoring
-* Confidence estimation
-
-## Phase 4
-
-* Teacher review interface
-* Report generation
-
-## Phase 5
-
-* Student mock exams
-* Personalized feedback
-* Progress tracking
-
-## Phase 6
-
-* Analytics
-* Batch evaluation
-* Dashboard
-* Multi-language support
-
----
-
-# 🤝 Contributing
-
-Contributions, suggestions, bug reports, and feature requests are welcome.
-
-PaperPilot aims to become a community-driven educational project that promotes fair and explainable AI-assisted evaluation.
+**Phase 6 (After — ~2–3 weeks):** Feature expansion
+- Document preview/download API
+- CSV/PDF evaluation report export
+- Student mock exam mode
+- Real-time OCR status via SSE
+- Dashboard analytics with charts
+- Dark mode toggle
+- Multi-language OCR support
 
 ---
 
@@ -294,11 +182,6 @@ MIT License
 
 ---
 
-# 💡 Long-Term Goal
+# 🤝 Contributing
 
-Build a free and open platform where:
-
-* Teachers spend less time grading.
-* Students receive instant, explainable feedback.
-* AI assists educators without replacing human judgment.
-* Learning becomes more transparent and accessible for everyone.
+Contributions are welcome! See the [PROJECT_ASSESSMENT.md](./PROJECT_ASSESSMENT.md) for the full execution plan.

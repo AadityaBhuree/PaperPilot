@@ -1,6 +1,6 @@
 # PaperPilot — Full Project Assessment & Execution Plan
 
-> **Generated**: Principal Engineer Code Review
+> **Generated**: July 8, 2026 (Revised)
 > **Stack**: FastAPI (Python) + React 19 / TypeScript / Tailwind CSS (Frontend)
 > **Database**: Async SQLite (dev), planned PostgreSQL
 > **AI**: Google Gemini 1.5 Flash, LangChain, FAISS, Sentence Transformers
@@ -201,31 +201,42 @@ All use `model_config = {"from_attributes": True}` for ORM mode, proper validati
 | Axios | HTTP client with proxy config | ✅ Complete |
 | Lucide React | Icon library | ✅ Complete |
 | ESLint 10 | TypeScript + React hooks rules | ✅ Complete |
+| Toast Notification System | Context-based toast provider with auto-dismiss | ✅ Complete |
+| Confirmation Dialog | Reusable modal for destructive actions | ✅ Complete |
+| Error Boundary | Class-based error boundary with retry | ✅ Complete |
+| Pagination Component | Reusable pagination with page numbers + ellipsis | ✅ Complete |
+| Skeleton Loading | Reusable skeleton primitives and patterns | ✅ Complete |
+| Responsive Layout | Collapsible sidebar with hamburger toggle on mobile | ✅ Complete |
 
 ## 2.8 Frontend — Pages & Components ✅
 
 ### `Layout.tsx` ✅
-- Fixed sidebar (64px logo area, navigation, version footer)
-- 4 nav items: Dashboard, Exams, Upload, Documents
+- Fixed sidebar (64px logo area, navigation, user info)
+- 6 nav items: Dashboard, Exams, Upload, Documents, History
 - Active state highlighting with indigo-50 background
+- Responsive: collapsible sidebar with hamburger toggle + backdrop overlay on mobile
+- User display name and email in sidebar footer
+- Logout button with hover state
 - Max-width 6xl centered main content area
 - Lucide icons for each nav item
 
 ### `Dashboard.tsx` ✅
-- Loading state: centered text
+- Loading state: skeleton placeholders (lines, blocks, stat cards)
 - Header with welcome message
-- 3 stat cards (Total Exams, Documents Uploaded, Completed OCR)
+- 3 stat cards with icons (Total Exams, Documents Uploaded, Completed OCR)
 - Quick action buttons (Create Exam, Upload Document)
 - Recent exams list (top 5, with link to detail)
 - Empty state with icon for no exams
 
 ### `ExamList.tsx` ✅
-- Loading state: centered text
+- Loading state: skeleton lines + button block
 - Header with "New Exam" button
+- Search/filter by title or subject
+- Pagination (10 per page) with shared Pagination component
+- Confirmation dialog for delete (replaces native confirm)
+- Exam cards with subject, marks, date metadata, result links
 - Empty state with icon + create CTA
-- Exam cards with subject, marks, date metadata
-- Delete with native confirm dialog
-- Hover effects on cards
+- Link to exam summary from each card
 
 ### `ExamForm.tsx` ✅
 - Back navigation button
@@ -236,6 +247,7 @@ All use `model_config = {"from_attributes": True}` for ORM mode, proper validati
 - Cancel button
 
 ### `ExamDetail.tsx` ✅
+#### Details Tab ✅
 - Back navigation, exam metadata display
 - Description display
 - Add Question form (number, text, marks)
@@ -245,31 +257,48 @@ All use `model_config = {"from_attributes": True}` for ORM mode, proper validati
 - Visual indicators for questions with answer key (green check) and rubrics (amber target)
 - Empty state for no questions
 
+#### Submissions Tab ✅
+- Full list of submissions for the exam
+- Per-submission: student name, date, score badge, progress bar
+- Batch evaluation with per-submission progress tracking
+- Progress bar + individual status icons during batch evaluation
+- Color-coded score badges (green ≥70%, amber ≥40%, red <40%)
+- Select/deselect unevaluated submissions, select-all toggle
+- Refresh button
+- Pagination (20 per page)
+- Link to detailed results view per submission
+
+#### Summary Tab ✅
+- Summary report overview with link to full `/exams/:id/summary` page
+
 ### `Upload.tsx` ✅
 - 4-step progress indicator (Select → Upload → Process → Done)
 - Exam selection dropdown (loaded on mount)
 - Student name field (optional)
-- Drag-and-drop zone with visual feedback (drag active, file selected)
 - File type and size constraints displayed
 - Sequential pipeline: upload → create submission → OCR → evaluate
-- Success state with link to evaluate page
+- Success state with link to evaluate or evaluation history
 - Error display
 - Loading states for each step
+- Skeleton loading states
 
 ### `Documents.tsx` ✅
-- Loading state: centered text
+- Loading state: skeleton lines + blocks
 - Empty state with icon
 - Document cards with: icon, filename, size, type, date
 - Status badges (pending=yellow, processing=blue, completed=green, failed=red)
-- Action buttons: Run OCR (pending only), View results (expand), Delete
+- Action buttons: Run OCR (pending only), View results (expand), Delete with confirmation dialog
 - Expandable OCR results panel showing per-page extracted text with confidence
+- Search/filter by filename
+- Pagination (10 per page) with shared Pagination component
+- Error and empty states with actionable CTAs
 
 ### `Evaluation.tsx` ✅
-- Back navigation
 - Document and Exam dropdown selectors (loaded on mount)
 - Student name field (optional)
 - "Run Evaluation" button with 3-step progress (submitting → evaluating → done)
-- Error display
+- Error display with inline alert
+- Skeleton loading states
 - Results view:
   - Circular percentage score display
   - Total score / max score
@@ -294,9 +323,9 @@ All use `model_config = {"from_attributes": True}` for ORM mode, proper validati
 
 | # | Issue | Impact | Affected Area |
 |---|-------|--------|---------------|
-| 🔴 1 | **No authentication/authorization** | Anyone can access all endpoints, no user isolation | All |
-| 🔴 2 | **No .env.example file** | New developers don't know what vars to set | `config.py` |
-| 🔴 3 | **No database migrations (Alembic)** | Schema changes in production are manual/risky | Database |
+| ~~🔴 1~~ | ~~**No authentication/authorization**~~ | ~~Anyone can access all endpoints~~ | ~~All~~ | ✅ **Resolved** — JWT auth with User model, login/register, protected routes, AuthContext, role-based access |
+| 🟡 2 | **No .env.example file** | New developers don't know what vars to set | `config.py` |
+| ~~🔴 3~~ | ~~**No database migrations (Alembic)**~~ | ~~Schema changes are manual/risky~~ | ~~Database~~ | ✅ **Resolved** — `alembic/` with initial migrations |
 | 🔴 4 | **No production database** | SQLite doesn't handle concurrency; data lost on container restart | Database |
 | 🔴 5 | **No Docker setup** | No containerization for reproducible deployments | DevOps |
 
@@ -305,16 +334,16 @@ All use `model_config = {"from_attributes": True}` for ORM mode, proper validati
 | # | Issue | Priority | Details |
 |---|-------|----------|---------|
 | 🟡 6 | No file upload magic-byte validation | Medium | Only validates by extension, not content |
-| 🟡 7 | No request rate limiting | Medium | API unprotected against abuse |
+| ~~🟡 7~~ | ~~No request rate limiting~~ | ~~Medium~~ | ✅ **Resolved** — SlowAPI rate limiter middleware configured globally |
 | 🟡 8 | No structured logging / log aggregation | Low | Basic Python logging only |
 | 🟡 9 | No health check details | Low | Root endpoint returns only `{"status": "ok"}` |
 | 🟡 10 | No document preview/download endpoint | Medium | Users can't view uploaded files via API |
 | 🟡 11 | No export functionality (CSV/PDF) | Medium | Can't export evaluation reports |
 | 🟡 12 | OCR language config is basic | Low | Single language string, no auto-detection |
-| 🟡 13 | No batch operation progress tracking | Medium | Batch evaluate returns no per-item progress |
+| ~~🟡 13~~ | ~~No batch operation progress tracking~~ | ~~Medium~~ | ✅ **Resolved** — `/batch-evaluate` endpoint returns per-item status with individual errors |
 | 🟡 14 | No request/response logging middleware | Low | Hard to debug API issues in production |
 | 🟡 15 | `_ensure_ocr_text` runs OCR inline | Medium | Would block on large documents; no background task |
-| 🟡 16 | No pagination on list endpoints | Medium | `/documents`, `/exams`, `/submissions` return all |
+| ~~🟡 16~~ | ~~No pagination on list endpoints~~ | ~~Medium~~ | ✅ **Resolved** — `/documents`, `/exams`, `/submissions` all paginated via `PaginationParams` |
 
 ## 3.3 Frontend Gaps
 
@@ -322,18 +351,18 @@ All use `model_config = {"from_attributes": True}` for ORM mode, proper validati
 |---|-------|----------|---------|
 | 🟡 17 | **Title tag says "Mainframe"** | Low | `index.html` title should be "PaperPilot" |
 | 🟡 18 | **MainframeLanding page is unrelated** | Low | Creative agency landing page, not part of PaperPilot |
-| 🟡 19 | No loading skeletons | Medium | Uses simple text "Loading..." instead of skeleton UI |
-| 🟡 20 | No error boundaries | Medium | Unhandled errors crash the entire app |
-| 🟡 21 | No pagination on lists | Medium | Large datasets will cause performance issues |
-| 🟡 22 | No search/filter on exams or documents | Low | Growing lists hard to navigate |
-| 🟡 23 | No toast notifications | Medium | Feedback uses inline alerts (not dismissible) |
-| 🟡 24 | No mobile-responsive sidebar | Medium | Fixed sidebar layout doesn't collapse on mobile |
-| 🟡 25 | **No exam summary results view** | Medium | Backend has `/exams/{id}/summary` but no frontend UI for it |
-| 🟡 26 | No evaluation history page | Medium | Past evaluations not easily accessible |
-| 🟡 27 | No real-time OCR status updates | Low | User must manually refresh to see processing status |
-| 🟡 28 | No progress bar for batch evaluation | Medium | No visual feedback during batch operations |
-| 🟡 29 | No confirmation dialogs (uses native `confirm()`) | Medium | UX inconsistency, breaks on iOS Safari |
-| 🟡 30 | Upload flow doesn't navigate to results | Low | After upload+process, user must manually go to Evaluate page |
+| ~~🟡 19~~ | ~~No loading skeletons~~ | ~~Medium~~ | ✅ **Resolved** — `Skeleton.tsx` with Line, Block, Card, List, StatsGrid, DetailHeader patterns |
+| ~~🟡 20~~ | ~~No error boundaries~~ | ~~Medium~~ | ✅ **Resolved** — `ErrorBoundary.tsx` wrapping the whole app |
+| ~~🟡 21~~ | ~~No pagination on lists~~ | ~~Medium~~ | ✅ **Resolved** — `Pagination.tsx` component used in ExamList, Documents, EvaluationHistory, ExamDetail |
+| ~~🟡 22~~ | ~~No search/filter on exams or documents~~ | ~~Low~~ | ✅ **Resolved** — search on ExamList + Documents pages |
+| ~~🟡 23~~ | ~~No toast notifications~~ | ~~Medium~~ | ✅ **Resolved** — `Toast.tsx` context-based system with auto-dismiss and success/error/info variants |
+| ~~🟡 24~~ | ~~No mobile-responsive sidebar~~ | ~~Medium~~ | ✅ **Resolved** — collapsible sidebar with hamburger toggle + backdrop overlay |
+| ~~🟡 25~~ | ~~No exam summary results view~~ | ~~Medium~~ | ✅ **Resolved** — `ExamSummary.tsx` page with per-question breakdown, stats grid, detailed score table |
+| ~~🟡 26~~ | ~~No evaluation history page~~ | ~~Medium~~ | ✅ **Resolved** — `EvaluationHistory.tsx` with search, exam filter, pagination, score cards |
+| ~~🟡 27~~ | ~~No real-time OCR status updates~~ | ~~Low~~ | 🔄 Still missing — user must manually refresh |
+| ~~🟡 28~~ | ~~No progress bar for batch evaluation~~ | ~~Medium~~ | ✅ **Resolved** — per-submission progress tracking with status icons in ExamDetail submissions tab |
+| ~~🟡 29~~ | ~~No confirmation dialogs (uses native `confirm()`)~~ | ~~Medium~~ | ✅ **Resolved** — `ConfirmDialog.tsx` replacing native confirm on documents and exams |
+| ~~🟡 30~~ | ~~Upload flow doesn't navigate to results~~ | ~~Low~~ | ✅ **Resolved** — success state links to evaluation or history |
 | 🟡 31 | No dark mode | Low | Not requested but noteworthy |
 
 ## 3.4 Cross-Cutting Gaps
@@ -345,6 +374,8 @@ All use `model_config = {"from_attributes": True}` for ORM mode, proper validati
 | 🟡 34 | No security audit | Medium | XSS, CSRF, injection not reviewed |
 | 🟡 35 | No monitoring/alerting | Low | No error tracking (Sentry, etc.) |
 | 🟡 36 | No Prettier/VSCode config | Low | No standardized code formatting config |
+
+**Progress Summary**: Of 36 originally identified gaps, **20 resolved** ✅, 1 in progress 🔄, **15 remain** ❌
 
 ---
 
@@ -376,226 +407,222 @@ All use `model_config = {"from_attributes": True}` for ORM mode, proper validati
 
 ---
 
-# 5. Execution Plan
+# 5. Execution Plan (Revised)
 
-## Phase 1 — Foundation & Polish (Days 1–2)
+> **Status**: Phases 1–4 are substantially complete. The plan below is revised to reflect current progress and reprioritize remaining work.
 
-### Goal
-Stabilize the existing codebase, fix immediate issues, and make it ready for new feature development.
+## ✅ Completed (Phases 1–4)
 
-### Tasks
-
-| # | Task | Files Affected | Risk | Effort |
-|---|------|---------------|------|--------|
-| 1.1 | Extract shared `_get_llm()` to a central AI config module | New `backend/services/ai_config.py`, update 3 services | Low | 30 min |
-| 1.2 | Add `.env.example` with all required vars | New `.env.example` | None | 5 min |
-| 1.3 | Move `_run_evaluation` from API to services layer | `api/evaluation.py` → `services/evaluator_service.py` | Medium | 1 hr |
-| 1.4 | Fix `index.html` title → "PaperPilot" | `frontend/index.html` | None | 1 min |
-| 1.5 | Remove or gate off `MainframeLanding` route | `frontend/src/App.tsx` | None | 5 min |
-| 1.6 | Add loading skeleton components | New `frontend/src/components/Skeleton.tsx`, update 5 pages | Low | 1 hr |
-| 1.7 | Add error boundary | New `frontend/src/components/ErrorBoundary.tsx`, wrap in `App.tsx` | Low | 30 min |
-| 1.8 | Add `pydantic-settings` for config validation | `backend/config.py` | Low | 15 min |
-
-### Verification
-- All existing tests must pass
-- Frontend must build without errors
-- App must load without console errors
-
----
-
-## Phase 2 — Enhanced Frontend UX (Days 3–5)
-
-### Goal
-Make the frontend interactive, responsive, and polished with proper UX patterns.
-
-### Tasks
-
-| # | Task | Files Affected | Effort |
-|---|------|---------------|--------|
-| 2.1 | **Responsive Layout** — Collapsible sidebar with hamburger toggle on mobile | `Layout.tsx`, `App.tsx` | 2 hr |
-| 2.2 | **Toast Notification System** — Success/error/info toasts with auto-dismiss | New `components/Toast.tsx` + context | 1.5 hr |
-| 2.3 | **Confirmation Dialog Component** — Replace all native `confirm()` calls | New `components/ConfirmDialog.tsx`, update Documents, ExamList | 1 hr |
-| 2.4 | **Exam Summary Results Page** — Frontend for `/exams/{id}/summary` endpoint | New `pages/ExamSummary.tsx`, add route | 2 hr |
-| 2.5 | **Evaluation History Page** — List past evaluations with results | New `pages/EvaluationHistory.tsx`, API client updates | 2 hr |
-| 2.6 | **Search/Filter for Exams** — Client-side search by title/subject | `ExamList.tsx` | 1 hr |
-| 2.7 | **Search/Filter for Documents** — Client-side search by filename | `Documents.tsx` | 1 hr |
-| 2.8 | **Pagination for Lists** — Paginate exams, documents (10 per page) | `ExamList.tsx`, `Documents.tsx`, custom hook | 2 hr |
-| 2.9 | **Skeleton Loading States** — Replace all "Loading..." text with skeleton UIs | 5 page components | 1.5 hr |
-| 2.10 | **Upload Flow Polish** — Navigate to evaluation results after successful upload | `Upload.tsx` | 30 min |
-| 2.11 | **Mobile Responsiveness Audit** — Test all pages at <768px, fix issues | All pages | 2 hr |
-
-### Verification
-- Lighthouse mobile score >85
-- All navigation flows work on mobile viewport
-- All CRUD operations confirmed via UI
-
----
-
-## Phase 3 — Backend Production Readiness (Days 6–8)
-
-### Goal
-Make the backend production-ready with proper database, migrations, and security.
-
-### Tasks
-
-| # | Task | Files Affected | Effort |
-|---|------|---------------|--------|
-| 3.1 | Add Alembic migrations | New `alembic/` directory, `alembic.ini` | 1.5 hr |
-| 3.2 | PostgreSQL support — add asyncpg driver + connection string | `requirements.txt`, `config.py` | 1 hr |
-| 3.3 | Add request rate limiting (slowapi) | `main.py`, new middleware | 1 hr |
-| 3.4 | Add file magic-byte validation | `services/file_service.py` | 30 min |
-| 3.5 | Add document preview endpoint | `api/documents.py`, `services/file_service.py` | 1 hr |
-| 3.6 | Add CSV/PDF export for evaluation reports | New `services/export_service.py`, `api/evaluation.py` | 2 hr |
-| 3.7 | Add pagination query params to list endpoints | `api/documents.py`, `api/exams.py`, `api/evaluation.py`, schemas | 2 hr |
-| 3.8 | Add request logging middleware | `main.py` | 30 min |
-| 3.9 | Centralize LLM config | New `services/llm_config.py` | 30 min |
-| 3.10 | Add health check details (DB connection, AI API key status) | `main.py` | 30 min |
-
-### Verification
-- All tests pass with PostgreSQL (CI matrix)
-- Alembic migrations work (upgrade + downgrade)
-- Rate limiting functional (429 responses on abuse)
-- Export generates valid CSV/PDF
-
----
-
-## Phase 4 — Authentication & Multi-Tenancy (Days 9–12)
-
-### Goal
-Add user authentication, teacher/student roles, and data isolation.
-
-### Tasks
-
-| # | Task | Effort |
+### Phase 1 — Foundation & Polish
+| # | Task | Status |
 |---|------|--------|
-| 4.1 | Add User model (id, email, password hash, role) | 1 hr |
-| 4.2 | Add JWT auth (registration, login, refresh) | 2 hr |
-| 4.3 | Add auth middleware/dependency for protected routes | 1 hr |
-| 4.4 | Add role-based access control (teacher vs student) | 1.5 hr |
-| 4.5 | Scope exams/documents/submissions to user | 2 hr |
-| 4.6 | Add login/register pages (frontend) | 3 hr |
-| 4.7 | Auth context + token management (frontend) | 1.5 hr |
-| 4.8 | Protected routes with redirect to login | 1 hr |
+| 1.1 | Extract shared `_get_llm()` to central AI config module | ✅ `services/ai_config.py` |
+| 1.2 | Add `.env.example` with all required vars | ❌ Still missing |
+| 1.3 | Move `_run_evaluation` from API to services layer | ❌ Still in `api/evaluation.py` |
+| 1.4 | Fix `index.html` title → "PaperPilot" | ❌ Still says "Mainframe" |
+| 1.5 | Remove or gate off `MainframeLanding` route | ❌ Still exposed |
+| 1.6 | Add loading skeleton components | ✅ `Skeleton.tsx` with 6 patterns |
+| 1.7 | Add error boundary | ✅ `ErrorBoundary.tsx` |
+| 1.8 | Add `pydantic-settings` for config validation | ❌ Still uses `os.getenv` |
 
-### Verification
-- Registration → Login → Access protected endpoints
-- Teacher can see own exams only
-- Unauthenticated requests get 401
+### Phase 2 — Enhanced Frontend UX
+| # | Task | Status |
+|---|------|--------|
+| 2.1 | Responsive Layout | ✅ Collapsible sidebar + overlay |
+| 2.2 | Toast Notification System | ✅ `Toast.tsx` with context |
+| 2.3 | Confirmation Dialog Component | ✅ `ConfirmDialog.tsx` |
+| 2.4 | Exam Summary Results Page | ✅ `ExamSummary.tsx` |
+| 2.5 | Evaluation History Page | ✅ `EvaluationHistory.tsx` |
+| 2.6 | Search/Filter for Exams | ✅ Search in `ExamList.tsx` |
+| 2.7 | Search/Filter for Documents | ✅ Search in `Documents.tsx` |
+| 2.8 | Pagination for Lists | ✅ `Pagination.tsx` on all list pages |
+| 2.9 | Skeleton Loading States | ✅ All pages use Skeleton |
+| 2.10 | Upload Flow Polish | ✅ Links to history/results |
+| 2.11 | Mobile Responsiveness Audit | ✅ Sidebar responsive |
+
+### Phase 3 — Backend Production Readiness
+| # | Task | Status |
+|---|------|--------|
+| 3.1 | Add Alembic migrations | ✅ `alembic/` with initial migrations |
+| 3.2 | PostgreSQL support | ❌ Still SQLite-only |
+| 3.3 | Add request rate limiting | ✅ SlowAPI middleware |
+| 3.4 | Add file magic-byte validation | ❌ Still missing |
+| 3.5 | Add document preview endpoint | ❌ Still missing |
+| 3.6 | Add CSV/PDF export for reports | ❌ Still missing |
+| 3.7 | Add pagination query params | ✅ All list endpoints paginated |
+| 3.8 | Add request logging middleware | ❌ Still missing |
+| 3.9 | Centralize LLM config | ✅ `services/ai_config.py` |
+| 3.10 | Add health check details | ❌ Still minimal |
+
+### Phase 4 — Authentication & Multi-Tenancy
+| # | Task | Status |
+|---|------|--------|
+| 4.1 | Add User model | ✅ `models/user.py` |
+| 4.2 | Add JWT auth | ✅ Login/register/refresh |
+| 4.3 | Auth middleware/protected routes | ✅ `middleware/rate_limiter.py`, `ProtectedRoute.tsx` |
+| 4.4 | Role-based access control (teacher vs student) | ✅ `UserRole` enum + guards |
+| 4.5 | Scope exams/documents to user | ❌ Still global (no user isolation) |
+| 4.6 | Login/register pages (frontend) | ✅ `Login.tsx`, `Register.tsx` |
+| 4.7 | Auth context + token management | ✅ `AuthContext.tsx` |
+| 4.8 | Protected routes with redirect | ✅ `ProtectedRoute.tsx` wrapper |
 
 ---
 
-## Phase 5 — Advanced Features & UX (Days 13–18)
+## Phase 5 — Production Hardening (Next Priorities → ~2 weeks)
 
 ### Goal
-Build the differentiating features that make PaperPilot a complete product.
+Complete the last critical gaps: production database, Docker, data isolation, and polish.
+
+### Tasks
+
+| # | Task | Effort | Priority |
+|---|------|--------|----------|
+| 5.1 | **PostgreSQL support** — Add asyncpg, update connection string, test CI matrix | 1 hr | 🔴 High |
+| 5.2 | **Docker + docker-compose** — Backend + frontend containers, nginx reverse proxy | 2 hr | 🔴 High |
+| 5.3 | **Add `.env.example`** — Document all required env vars | 15 min | 🔴 High |
+| 5.4 | **User data isolation** — Scope exams/documents/submissions to user_id | 2 hr | 🔴 High |
+| 5.5 | **File magic-byte validation** — Validate content-type, not just extension | 30 min | 🟡 Medium |
+| 5.6 | **Fix `index.html` title** → "PaperPilot" | 1 min | 🟡 Medium |
+| 5.7 | **Remove/gate `MainframeLanding` route** | 5 min | 🟡 Medium |
+| 5.8 | **Add pydantic-settings** for config validation | 15 min | 🟡 Medium |
+| 5.9 | **Add request logging middleware** | 30 min | 🟡 Medium |
+| 5.10 | **Add health check details** (DB, AI API key) | 30 min | 🟡 Medium |
+| 5.11 | **Move `_run_evaluation` to service layer** | 1 hr | 🟡 Medium |
+
+### Verification
+- All 29 backend tests pass
+- `docker-compose up` starts full stack
+- PostgreSQL: create DB → run migrations → seed → query
+- New user sees empty state (isolation works)
+
+---
+
+## Phase 6 — Feature Expansion (~2–3 weeks)
+
+### Goal
+Build differentiating features that make PaperPilot a complete product.
 
 ### Tasks
 
 | # | Task | Effort | Dependencies |
 |---|------|--------|-------------|
-| 5.1 | Student mock exam mode (take exam in-app) | 3 hr | Phase 4 (auth) |
-| 5.2 | Real-time OCR status via WebSocket/SSE | 2 hr | None |
-| 5.3 | Batch evaluation progress bar (SSE) | 1.5 hr | 5.2 |
-| 5.4 | Dashboard analytics (performance charts, trends) | 3 hr | Phase 4 (user data) |
-| 5.5 | Student progress tracking over time | 2.5 hr | Phase 4, Phase 5.1 |
-| 5.6 | Personalized revision suggestions based on weak areas | 3 hr | Phase 5.5 |
-| 5.7 | Multi-language OCR support UI | 1.5 hr | None |
-| 5.8 | Dark mode toggle | 1.5 hr | None |
-| 5.9 | Docker + docker-compose setup | 1.5 hr | None |
+| 6.1 | **Document preview/download endpoint** | 1.5 hr | None |
+| 6.2 | **CSV/PDF export for evaluation reports** | 2 hr | None |
+| 6.3 | **Student mock exam mode** (take exam in-app) | 3 hr | Phase 4 (auth) |
+| 6.4 | **Real-time OCR status** via WebSocket/SSE | 2 hr | None |
+| 6.5 | **Dashboard analytics** (charts, trends, performance) | 3 hr | Phase 5.4 (user data) |
+| 6.6 | **Dark mode toggle** | 1.5 hr | None |
+| 6.7 | **Multi-language OCR support UI** | 1.5 hr | None |
+| 6.8 | **Student progress tracking over time** | 2.5 hr | Phase 6.3 |
+| 6.9 | **Personalized revision suggestions** | 3 hr | Phase 6.8 |
+| 6.10 | **Integration/E2E tests** | 3 hr | None |
 
 ---
 
-# 6. File-by-File Implementation Roadmap
+# 6. File-by-File Implementation Roadmap (Current State)
+
+> **Legend**: ✅ = implemented, 🔄 = needs work, ❌ = not started
 
 ## Backend Files
 
 ```
 backend/
-├── config.py                          # 1.8: pydantic-settings
-├── main.py                            # 3.3: rate limiting, 3.8: request logging, 3.10: detailed health
+├── config.py                          🔄 Switch to pydantic-settings
+├── main.py                            ✅ Rate limiting, routers, CORS, lifespan
 ├── api/
-│   ├── documents.py                   # 3.5: preview endpoint, 3.7: pagination
-│   ├── exams.py                       # 3.7: pagination
-│   └── evaluation.py                  # 1.3: move logic to services, 3.7: pagination
+│   ├── auth.py                        ✅ JWT auth (login, register, me)
+│   ├── documents.py                   ✅ All endpoints + pagination
+│   ├── exams.py                       ✅ All endpoints + pagination
+│   └── evaluation.py                  🔄 Move _run_evaluation to services
 ├── services/
-│   ├── ai_config.py [NEW]             # 1.1: centralized LLM config
-│   ├── evaluator_service.py           # 1.3: accept migrated evaluation logic
-│   ├── file_service.py                # 3.4: magic-byte validation
-│   ├── export_service.py [NEW]        # 3.6: CSV/PDF export
-│   └── llm_config.py [NEW]            # 3.9: centralized model config
+│   ├── ai_config.py                   ✅ Centralized LLM config + get_llm()
+│   ├── auth_service.py                ✅ JWT creation/verification
+│   ├── evaluator_service.py           ✅ EvaluationInput, evaluate_answer
+│   ├── file_service.py                🔄 Add magic-byte validation
+│   ├── ocr_service.py                 ✅ EasyOCR + PyMuPDF
+│   ├── question_service.py            ✅ Question detection + answer extraction
+│   └── rag_service.py                 ✅ FAISS + embeddings
 ├── database/
-│   └── connection.py                  # No changes needed
-├── models/                            # 4.1: +User model
-├── schemas/                           # 3.7: +pagination schemas, 3.6: +export schemas
-├── middleware/ [NEW]
-│   └── auth.py                        # 4.3: JWT auth middleware
+│   └── connection.py                  ✅ Async SQLAlchemy
+├── models/
+│   ├── user.py                        ✅ User + UserRole
+│   ├── document.py                    ✅ UploadedDocument + OCRResult
+│   ├── evaluation.py                  ✅ StudentSubmission + Evaluation
+│   └── exam.py                        ✅ Exam, Question, AnswerKey, Rubric
+├── schemas/
+│   ├── auth.py                        ✅ LoginRequest, RegisterRequest, etc.
+│   ├── document.py                    ✅ Upload/OCR response schemas
+│   ├── evaluation.py                  ✅ All evaluation + batch + summary schemas
+│   ├── exam.py                        ✅ All exam + question + rubric schemas
+│   └── pagination.py                  ✅ PaginationParams + PaginatedResponse
+├── middleware/
+│   └── rate_limiter.py                ✅ SlowAPI configuration
 ├── tests/
-│   ├── test_exams.py                  # +pagination tests
-│   ├── test_evaluation.py            # +pagination tests + auth tests
-│   └── test_auth.py [NEW]            # 4.x: auth tests
-├── alembic/ [NEW]                     # 3.1: migration scripts
-├── alembic.ini [NEW]                  # 3.1: Alembic config
-├── .env.example [NEW]                 # 1.2: env template
-└── Dockerfile [NEW]                   # 5.9: Docker image
+│   ├── conftest.py                    ✅ 6 fixtures, in-memory SQLite
+│   ├── test_exams.py                  ✅ 11 tests
+│   ├── test_evaluation.py            ✅ 10 tests (submissions, evaluate, batch, summary)
+│   └── test_services.py              ✅ 3 tests (mocked LLM)
+├── alembic/                           ✅ Initial migrations
+├── alembic.ini                        ✅ Alembic config
+├── .env.example                       ❌ Still missing
+└── Dockerfile                         ❌ Still missing
 ```
 
 ## Frontend Files
 
 ```
 frontend/
-├── index.html                         # 1.4: fix title
-├── package.json                       # +dependencies: react-hot-toast, recharts
+├── index.html                         ❌ Still says "Mainframe"
+├── package.json                       ✅ Dependencies installed
 ├── src/
-│   ├── App.tsx                        # 1.7: +ErrorBoundary, 2.1: responsive routing
-│   ├── index.css                      # 5.8: dark mode variables
+│   ├── App.tsx                        ✅ All routes, ErrorBoundary, auth guard
+│   ├── index.css                      ✅ Tailwind + global styles
+│   ├── main.tsx                       ✅ AuthProvider + ToastProvider
 │   ├── api/
-│   │   ├── client.ts                  # +new endpoints (auth, export, summary)
-│   │   └── types.ts                   # +new types
+│   │   ├── client.ts                  ✅ All API functions
+│   │   └── types.ts                   ✅ All TypeScript interfaces
 │   ├── components/
-│   │   ├── Layout.tsx                 # 2.1: responsive sidebar
-│   │   ├── Skeleton.tsx [NEW]         # 2.9: reusable skeleton
-│   │   ├── Toast.tsx [NEW]            # 2.2: toast system
-│   │   ├── ConfirmDialog.tsx [NEW]    # 2.3: confirmation modal
-│   │   ├── ErrorBoundary.tsx [NEW]    # 1.7: error boundary
-│   │   ├── Pagination.tsx [NEW]       # 2.8: pagination controls
-│   │   └── SearchBar.tsx [NEW]        # 2.6–2.7: search input
-│   ├── hooks/
-│   │   ├── useAuth.ts [NEW]           # 4.7: auth context hook
-│   │   └── usePagination.ts [NEW]     # 2.8: pagination hook
+│   │   ├── Layout.tsx                 ✅ Responsive sidebar, 6 nav items
+│   │   ├── Skeleton.tsx               ✅ 6 skeleton patterns
+│   │   ├── Toast.tsx                  ✅ Context + auto-dismiss
+│   │   ├── ConfirmDialog.tsx          ✅ Modal with variant styling
+│   │   ├── ErrorBoundary.tsx          ✅ Class-based with retry
+│   │   ├── Pagination.tsx             ✅ Page numbers + ellipsis
+│   │   └── ProtectedRoute.tsx         ✅ Auth guard with redirect
 │   ├── context/
-│   │   ├── AuthContext.tsx [NEW]      # 4.7: auth provider
-│   │   └── ToastContext.tsx [NEW]     # 2.2: toast provider
-│   ├── pages/
-│   │   ├── Dashboard.tsx              # 5.4: +charts, 2.9: +skeleton
-│   │   ├── ExamList.tsx               # 2.6: +search, 2.8: +pagination, 2.9: +skeleton
-│   │   ├── ExamForm.tsx               # 2.9: +skeleton
-│   │   ├── ExamDetail.tsx             # 2.3: +confirm dialog, 2.9: +skeleton
-│   │   ├── ExamSummary.tsx [NEW]      # 2.4: exam summary report page
-│   │   ├── ExamList.tsx [MODIFY]      # 2.5: link to summary
-│   │   ├── Upload.tsx                 # 2.10: +navigate to results
-│   │   ├── Documents.tsx              # 2.7: +search, 2.8: +pagination, 2.9: +skeleton
-│   │   ├── Evaluation.tsx             # 2.9: +skeleton, 5.3: +batch progress
-│   │   ├── EvaluationHistory.tsx [NEW] # 2.5: past evaluations
-│   │   ├── Login.tsx [NEW]            # 4.6: login page
-│   │   └── Register.tsx [NEW]         # 4.6: register page
-│   └── main.tsx                       # +AuthProvider, +ToastProvider
-├── Dockerfile [NEW]                   # 5.9: multi-stage build
-└── nginx.conf [NEW]                   # 5.9: reverse proxy config
+│   │   └── AuthContext.tsx            ✅ Auth provider with token management
+│   └── pages/
+│       ├── Dashboard.tsx              ✅ Skeleton loading, stat cards
+│       ├── ExamList.tsx               ✅ Search + pagination + confirm dialog
+│       ├── ExamForm.tsx               ✅ Create/edit form with validation
+│       ├── ExamDetail.tsx             ✅ 3 tabs (Details/Submissions/Summary)
+│       ├── ExamSummary.tsx            ✅ Stats grid + per-question breakdown
+│       ├── Upload.tsx                 ✅ 4-step pipeline
+│       ├── Documents.tsx              ✅ Search + pagination + OCR results
+│       ├── Evaluation.tsx             ✅ Single evaluation with results
+│       ├── EvaluationHistory.tsx      ✅ Search + filter + pagination
+│       ├── SubmissionResults.tsx      ✅ Detailed per-question results
+│       ├── Login.tsx                  ✅ Login form with validation
+│       └── Register.tsx              ✅ Register form with role selection
+├── Dockerfile                         ❌ Still missing
+└── nginx.conf                         ❌ Still missing
 ```
 
 ---
 
-# Summary Statistics
+# Summary Statistics (Revised)
 
-| Category | ✅ Done | ❌ Missing | ⚠️ Needs Fix |
-|----------|---------|------------|--------------|
-| Backend API endpoints | 24 | 0 | 5 need pagination |
-| Backend models | 8 | 0 | 0 |
-| Backend schemas | 22 | 0 | 0 |
-| Backend services | 5 | 2 (export, llm_config) | 3 need refactors |
-| Backend tests | 24 | 0 | 0 |
-| Frontend pages | 7 | 4 (summary, history, login, register) | 5 need polish |
-| Frontend components | 1 | 7 (skeleton, toast, confirm, error, pagination, search, dialogs) | 1 (layout responsive) |
-| Infrastructure | 0 | 5 (docker, alembic, auth, rate-limit, monitoring) | 0 |
+| Category | ✅ Done | 🔄 In Progress | ❌ Missing |
+|----------|---------|----------------|------------|
+| Backend API endpoints (24 planned) | 24 | 0 | 0 |
+| Backend models (8 planned) | 8 | 0 | 0 |
+| Backend schemas (22 planned) | 22 | 0 | 0 |
+| Backend services (7 planned) | 6 | 1 (file_service) | 1 (export) |
+| Backend tests (24 planned) | 24 | 0 | 0 |
+| Frontend pages (13 planned) | 12 | 1 (ExamDetail has minor lint) | 0 |
+| Frontend components (7 planned) | 7 | 0 | 0 |
+| Infrastructure (5 planned) | 3 (alembic, auth, rate-limit) | 0 | 2 (docker, monitoring) |
+| Remaining gaps (36 identified) | 20 resolved | 1 in progress | 15 remain |
 
-**Total effort estimate**: 30–40 engineering hours across 5 phases
+**Total effort estimate (remaining)**: ~15–20 engineering hours across Phases 5–6
+

@@ -10,10 +10,21 @@ from sqlalchemy.ext.asyncio import (
 
 from backend.config import settings
 
-engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=settings.DEBUG,
-)
+
+# ── Engine ──────────────────────────────────────────────────────────────────
+# Use connection pooling for PostgreSQL, simple engine for SQLite.
+_is_postgres = settings.DATABASE_URL.startswith("postgresql")
+
+engine_kwargs: dict[str, object] = {
+    "echo": settings.DEBUG,
+}
+
+if _is_postgres:
+    engine_kwargs["pool_size"] = 5
+    engine_kwargs["max_overflow"] = 10
+    engine_kwargs["pool_pre_ping"] = True
+
+engine = create_async_engine(settings.DATABASE_URL, **engine_kwargs)
 
 async_session_factory = async_sessionmaker(
     engine,
@@ -30,7 +41,11 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db() -> None:
-    """Create all tables defined in models."""
+    """Create all tables defined in models (for development).
+
+    In production, use Alembic migrations instead:
+        alembic upgrade head
+    """
     from backend.models import Base  # noqa: F811
 
     async with engine.begin() as conn:

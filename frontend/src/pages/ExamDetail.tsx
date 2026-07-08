@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -6,33 +6,41 @@ import {
   BookOpen,
   CheckCircle,
   Target,
+  Users,
+  BarChart3,
+  Play,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 import {
   getExam,
   addQuestion,
   setAnswerKey,
   addRubric,
+  listSubmissionsForExam,
+  evaluateSubmission,
+  getEvaluationResults,
 } from '../api/client';
 import type {
   ExamDetailResponse,
   QuestionDetailResponse,
+  SubmissionResponse,
+  EvaluationSummaryResponse,
 } from '../api/types';
 import { Skeleton } from '../components/Skeleton';
+import { Pagination } from '../components/Pagination';
+
+type Tab = 'details' | 'submissions' | 'summary';
 
 export default function ExamDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [exam, setExam] = useState<ExamDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Add question form
-  const [showAddQuestion, setShowAddQuestion] = useState(false);
-  const [qNum, setQNum] = useState(1);
-  const [qText, setQText] = useState('');
-  const [qMarks, setQMarks] = useState(10);
-
-  // Active question for adding answer key / rubric
-  const [activeQ, setActiveQ] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>('details');
 
   useEffect(() => {
     if (id) getExam(id).then(setExam).finally(() => setLoading(false));
@@ -42,24 +50,15 @@ export default function ExamDetail() {
     if (id) getExam(id).then(setExam);
   };
 
-  const handleAddQuestion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!id || !qText.trim()) return;
-    await addQuestion(id, {
-      question_number: qNum,
-      question_text: qText.trim(),
-      max_marks: qMarks,
-    });
-    setQText('');
-    setQNum((n) => n + 1);
-    setShowAddQuestion(false);
-    refresh();
-  };
-
   if (loading) {
     return (
       <div className="space-y-6">
         <Skeleton.DetailHeader />
+        <div className="flex gap-2">
+          <Skeleton.Block className="w-24 h-10 rounded-lg" />
+          <Skeleton.Block className="w-28 h-10 rounded-lg" />
+          <Skeleton.Block className="w-24 h-10 rounded-lg" />
+        </div>
         <Skeleton.Block className="w-full h-20 rounded-xl" />
         <Skeleton.List count={3} />
       </div>
@@ -76,6 +75,12 @@ export default function ExamDetail() {
       </div>
     );
   }
+
+  const tabs: { key: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { key: 'details', label: 'Details', icon: BookOpen },
+    { key: 'submissions', label: 'Submissions', icon: Users },
+    { key: 'summary', label: 'Summary', icon: BarChart3 },
+  ];
 
   return (
     <div className="space-y-6">
@@ -97,6 +102,75 @@ export default function ExamDetail() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-gray-200">
+        {tabs.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === key
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {activeTab === 'details' && (
+        <ExamDetailsTab exam={exam} onRefresh={refresh} />
+      )}
+      {activeTab === 'submissions' && (
+        <ExamSubmissionsTab examId={exam.id} />
+      )}
+      {activeTab === 'summary' && (
+        <ExamSummaryTab examId={exam.id} examTitle={exam.title} />
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Details Tab (existing content)
+// ---------------------------------------------------------------------------
+
+function ExamDetailsTab({
+  exam,
+  onRefresh,
+}: {
+  exam: ExamDetailResponse;
+  onRefresh: () => void;
+}) {
+  const [showAddQuestion, setShowAddQuestion] = useState(false);
+  const [qNum, setQNum] = useState(
+    exam.questions.length > 0
+      ? Math.max(...exam.questions.map((q) => q.question_number)) + 1
+      : 1,
+  );
+  const [qText, setQText] = useState('');
+  const [qMarks, setQMarks] = useState(10);
+  const [activeQ, setActiveQ] = useState<string | null>(null);
+
+  const handleAddQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!qText.trim()) return;
+    await addQuestion(exam.id, {
+      question_number: qNum,
+      question_text: qText.trim(),
+      max_marks: qMarks,
+    });
+    setQText('');
+    setQNum((n) => n + 1);
+    setShowAddQuestion(false);
+    onRefresh();
+  };
+
+  return (
+    <div className="space-y-6">
       {exam.description && (
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <p className="text-gray-600">{exam.description}</p>
@@ -116,7 +190,6 @@ export default function ExamDetail() {
           </button>
         </div>
 
-        {/* Add question form */}
         {showAddQuestion && (
           <form
             onSubmit={handleAddQuestion}
@@ -173,7 +246,6 @@ export default function ExamDetail() {
           </form>
         )}
 
-        {/* Question list */}
         {exam.questions.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -188,7 +260,7 @@ export default function ExamDetail() {
                 examId={exam.id}
                 isActive={activeQ === q.id}
                 onToggle={() => setActiveQ(activeQ === q.id ? null : q.id)}
-                onRefresh={refresh}
+                onRefresh={onRefresh}
               />
             ))}
           </div>
@@ -197,6 +269,446 @@ export default function ExamDetail() {
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Submissions Tab with Batch Evaluation + Progress Bars
+// ---------------------------------------------------------------------------
+
+const PAGE_SIZE = 20;
+
+function ExamSubmissionsTab({
+  examId,
+}: {
+  examId: string;
+}) {
+  const [submissions, setSubmissions] = useState<SubmissionResponse[]>([]);
+  const [results, setResults] = useState<Record<string, EvaluationSummaryResponse>>({});
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [evaluating, setEvaluating] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [batchResults, setBatchResults] = useState<
+    { submissionId: string; status: 'pending' | 'evaluating' | 'completed' | 'failed'; percentage?: number }[]
+  >([]);
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const loadSubmissions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await listSubmissionsForExam(examId, page, PAGE_SIZE);
+      setSubmissions(data.items);
+      setTotal(data.total);
+      setTotalPages(data.total_pages);
+
+      // Load existing results for the current page
+      const resultMap: Record<string, EvaluationSummaryResponse> = {};
+      await Promise.all(
+        data.items.map(async (sub) => {
+          try {
+            const res = await getEvaluationResults(sub.id);
+            if (res.evaluations.length > 0) {
+              resultMap[sub.id] = res;
+            }
+          } catch {
+            // No results yet
+          }
+        }),
+      );
+      setResults(resultMap);
+    } catch {
+      // Silently fail
+    } finally {
+      setLoading(false);
+    }
+  }, [examId, page]);
+
+  useEffect(() => {
+    loadSubmissions();
+  }, [loadSubmissions]);
+
+  // Reset selections when page changes
+  useEffect(() => {
+    setSelected(new Set());
+  }, [page]);
+
+  useEffect(() => {
+    loadSubmissions();
+  }, [loadSubmissions]);
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const unevaluated = submissions.filter((s) => !results[s.id]);
+    if (selected.size === unevaluated.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(unevaluated.map((s) => s.id)));
+    }
+  };
+
+  const handleBatchEvaluate = async () => {
+    if (selected.size === 0) return;
+
+    const ids = Array.from(selected);
+    setEvaluating(true);
+    setBatchResults(
+      ids.map((id) => ({ submissionId: id, status: 'pending' as const })),
+    );
+
+    for (let i = 0; i < ids.length; i++) {
+      const sid = ids[i];
+      setProgress({ current: i + 1, total: ids.length });
+      setBatchResults((prev) =>
+        prev.map((r) =>
+          r.submissionId === sid ? { ...r, status: 'evaluating' as const } : r,
+        ),
+      );
+
+      try {
+        const evalResp = await evaluateSubmission(sid);
+        if (evalResp.status === 'completed') {
+          setBatchResults((prev) =>
+            prev.map((r) =>
+              r.submissionId === sid
+                ? { ...r, status: 'completed' as const, percentage: evalResp.percentage }
+                : r,
+            ),
+          );
+        } else {
+          setBatchResults((prev) =>
+            prev.map((r) =>
+              r.submissionId === sid ? { ...r, status: 'failed' as const } : r,
+            ),
+          );
+        }
+      } catch {
+        setBatchResults((prev) =>
+          prev.map((r) =>
+            r.submissionId === sid ? { ...r, status: 'failed' as const } : r,
+          ),
+        );
+      }
+    }
+
+    // Refresh results
+    await loadSubmissions();
+    setSelected(new Set());
+    setEvaluating(false);
+  };
+
+  const unevaluatedCount = submissions.filter((s) => !results[s.id]).length;
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton.List count={3} />
+      </div>
+    );
+  }
+
+  if (submissions.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+        <p className="text-gray-500">No submissions for this exam yet.</p>
+        <p className="text-sm text-gray-400 mt-1">
+          Upload a document and link it to this exam to create a submission.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">
+            {submissions.length} submission{submissions.length !== 1 ? 's' : ''}
+            {unevaluatedCount > 0 && (
+              <span className="text-amber-600 ml-1">
+                ({unevaluatedCount} unevaluated)
+              </span>
+            )}
+          </span>
+          <button
+            onClick={loadSubmissions}
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {selected.size > 0 && !evaluating && (
+            <span className="text-sm text-gray-500">{selected.size} selected</span>
+          )}
+          <button
+            onClick={handleBatchEvaluate}
+            disabled={selected.size === 0 || evaluating}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {evaluating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Evaluating {progress.current}/{progress.total}...
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4" />
+                Evaluate Selected ({selected.size})
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Progress bar during batch evaluation */}
+      {evaluating && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-gray-700">Batch Evaluation Progress</span>
+            <span className="text-gray-500">
+              {progress.current} / {progress.total}
+            </span>
+          </div>
+          <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-indigo-500 rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${(progress.current / progress.total) * 100}%` }}
+            />
+          </div>
+          {/* Individual submission statuses */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+            {batchResults.map((br) => (
+              <div
+                key={br.submissionId}
+                className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg bg-gray-50"
+              >
+                {br.status === 'pending' && (
+                  <div className="w-3 h-3 rounded-full border-2 border-gray-300" />
+                )}
+                {br.status === 'evaluating' && (
+                  <Loader2 className="w-3 h-3 text-indigo-500 animate-spin" />
+                )}
+                {br.status === 'completed' && (
+                  <CheckCircle className="w-3 h-3 text-emerald-500" />
+                )}
+                {br.status === 'failed' && (
+                  <AlertCircle className="w-3 h-3 text-red-500" />
+                )}
+                <span className="text-gray-600 truncate">
+                  {br.submissionId.slice(0, 8)}...
+                </span>
+                {br.percentage !== undefined && (
+                  <span className="text-gray-400 ml-auto">{br.percentage.toFixed(0)}%</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Select all toggle */}
+      {unevaluatedCount > 0 && !evaluating && (
+        <button
+          onClick={toggleSelectAll}
+          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          {selected.size === unevaluatedCount ? (
+            <CheckSquare className="w-4 h-4 text-indigo-600" />
+          ) : (
+            <Square className="w-4 h-4" />
+          )}
+          Select all unevaluated ({unevaluatedCount})
+        </button>
+      )}
+
+      {/* Submissions list */}
+      <div className="space-y-2">
+        {submissions.map((sub) => {
+          const result = results[sub.id];
+          return (
+            <SubmissionRow
+              key={sub.id}
+              submission={sub}
+              result={result}
+              selected={selected.has(sub.id)}
+              evaluating={evaluating}
+              onToggle={() => toggleSelect(sub.id)}
+            />
+          );
+        })}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          page={page}
+          total_pages={totalPages}
+          total={total}
+          page_size={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      )}
+    </div>
+  );
+}
+
+function SubmissionRow({
+  submission,
+  result,
+  selected,
+  evaluating,
+  onToggle,
+}: {
+  submission: SubmissionResponse;
+  result?: EvaluationSummaryResponse;
+  selected: boolean;
+  evaluating: boolean;
+  onToggle: () => void;
+}) {
+  const isEvaluated = !!result;
+  const scoreColor =
+    isEvaluated
+      ? result.percentage >= 70
+        ? 'text-emerald-600 bg-emerald-50'
+        : result.percentage >= 40
+          ? 'text-amber-600 bg-amber-50'
+          : 'text-red-600 bg-red-50'
+      : 'bg-gray-50 text-gray-400';
+
+  return (
+    <div
+      className={`bg-white rounded-xl border transition-all ${
+        selected ? 'border-indigo-400 ring-1 ring-indigo-200' : 'border-gray-200'
+      } p-4`}
+    >
+      <div className="flex items-center gap-3">
+        {/* Checkbox */}
+        {!isEvaluated && !evaluating && (
+          <button
+            onClick={onToggle}
+            className="shrink-0 text-gray-400 hover:text-indigo-600 transition-colors"
+          >
+            {selected ? (
+              <CheckSquare className="w-5 h-5 text-indigo-600" />
+            ) : (
+              <Square className="w-5 h-5" />
+            )}
+          </button>
+        )}
+
+        {/* Score badge */}
+        <div
+          className={`flex items-center justify-center w-12 h-12 rounded-xl font-bold text-sm shrink-0 ${scoreColor}`}
+        >
+          {isEvaluated ? result.percentage.toFixed(0) : '—'}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-900">
+            {submission.student_name || 'Anonymous'}
+          </p>
+          <p className="text-xs text-gray-400">
+            {new Date(submission.submitted_at).toLocaleDateString(undefined, {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </p>
+        </div>
+
+        {/* Score bar */}
+        {isEvaluated && (
+          <div className="hidden sm:flex items-center gap-2">
+            <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  result.percentage >= 70
+                    ? 'bg-emerald-500'
+                    : result.percentage >= 40
+                      ? 'bg-amber-500'
+                      : 'bg-red-500'
+                }`}
+                style={{ width: `${Math.min(result.percentage, 100)}%` }}
+              />
+            </div>
+            <span className="text-xs text-gray-500 w-14 text-right">
+              {result.total_score.toFixed(1)} / {result.max_possible_score.toFixed(1)}
+            </span>
+          </div>
+        )}
+
+        {/* Status badge */}
+        {isEvaluated && (
+          <Link
+            to={`/submissions/${submission.id}/results`}
+            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors shrink-0"
+            title="View results"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const ChevronRight = ({ className }: { className?: string }) => (
+  <ArrowLeft className={className} style={{ transform: 'rotate(180deg)' }} />
+);
+
+// ---------------------------------------------------------------------------
+// Summary Tab
+// ---------------------------------------------------------------------------
+
+function ExamSummaryTab({
+  examId,
+  examTitle,
+}: {
+  examId: string;
+  examTitle: string;
+}) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+      <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+      <h3 className="text-lg font-medium text-gray-900 mb-1">Exam Summary Report</h3>
+      <p className="text-gray-500 mb-6">
+        View a comprehensive summary of all evaluated submissions for &ldquo;{examTitle}&rdquo;,
+        including average scores, per-question breakdowns, and statistics.
+      </p>
+      <Link
+        to={`/exams/${examId}/summary`}
+        className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+      >
+        <BarChart3 className="w-4 h-4" />
+        View Full Summary
+      </Link>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Question Card
+// ---------------------------------------------------------------------------
 
 function QuestionCard({
   question,

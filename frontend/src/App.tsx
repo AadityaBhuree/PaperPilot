@@ -6,12 +6,14 @@ import Dashboard from './pages/Dashboard';
 import ExamList from './pages/ExamList';
 import ExamForm from './pages/ExamForm';
 import ExamDetail from './pages/ExamDetail';
+import ExamSummary from './pages/ExamSummary';
 import Upload from './pages/Upload';
 import Documents from './pages/Documents';
 import Evaluation from './pages/Evaluation';
+import EvaluationHistory from './pages/EvaluationHistory';
+import SubmissionResults from './pages/SubmissionResults';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import MainframeLanding from './pages/MainframeLanding';
 
 export default function App() {
   return (
@@ -23,16 +25,18 @@ export default function App() {
           <Route path="/register" element={<Register />} />
 
           {/* App routes (with sidebar + auth guard) */}
-          <Route path="/mainframe" element={<MainframeLanding />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/exams" element={<ExamList />} />
               <Route path="/exams/new" element={<ExamForm />} />
               <Route path="/exams/:id" element={<ExamDetail />} />
+              <Route path="/exams/:id/summary" element={<ExamSummary />} />
               <Route path="/upload" element={<Upload />} />
               <Route path="/documents" element={<Documents />} />
               <Route path="/evaluate" element={<Evaluation />} />
+              <Route path="/evaluations" element={<EvaluationHistory />} />
+              <Route path="/submissions/:submissionId/results" element={<SubmissionResults />} />
             </Route>
           </Route>
 

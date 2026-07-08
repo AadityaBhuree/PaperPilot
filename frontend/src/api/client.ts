@@ -2,10 +2,12 @@ import axios from 'axios';
 import type {
   AnswerKeyCreate,
   AnswerKeyResponse,
+  BatchEvaluateResponse,
   DocumentResponse,
   ExamCreate,
   ExamDetailResponse,
   ExamResponse,
+  ExamSummaryResponse,
   ExamUpdate,
   EvaluateSubmissionResponse,
   EvaluationSummaryResponse,
@@ -181,6 +183,33 @@ export async function getEvaluationResults(
 ): Promise<EvaluationSummaryResponse> {
   const { data } = await api.get<EvaluationSummaryResponse>(
     `/evaluation/submissions/${submissionId}/results`,
+  );
+  return data;
+}
+
+export async function getExamSummary(examId: string): Promise<ExamSummaryResponse> {
+  const { data } = await api.get<ExamSummaryResponse>(
+    `/evaluation/exams/${examId}/summary`,
+  );
+  return data;
+}
+
+export async function batchEvaluate(
+  submissionIds: string[],
+): Promise<BatchEvaluateResponse> {
+  const { data } = await api.post<BatchEvaluateResponse>(
+    '/evaluation/batch-evaluate',
+    { submission_ids: submissionIds },
+  );
+  return data;
+}
+
+export async function listAllSubmissions(
+  page = 1,
+  pageSize = 20,
+): Promise<PaginatedResponse<SubmissionResponse>> {
+  const { data } = await api.get<PaginatedResponse<SubmissionResponse>>(
+    `/evaluation/submissions?page=${page}&pageSize=${pageSize}`,
   );
   return data;
 }

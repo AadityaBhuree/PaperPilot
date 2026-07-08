@@ -89,6 +89,37 @@ async def get_submission(
     return SubmissionResponse.model_validate(sub)
 
 
+# ---------------------------------------------------------------------------
+# Global submissions endpoint (across all exams)
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/submissions",
+    response_model=PaginatedResponse[SubmissionResponse],
+)
+async def list_all_submissions(
+    p: PaginationParams = Depends(),
+    db: AsyncSession = Depends(get_session),
+) -> PaginatedResponse[SubmissionResponse]:
+    """List all student submissions across all exams with pagination."""
+    count_result = await db.execute(
+        select(func.count()).select_from(StudentSubmission)
+    )
+    total = count_result.scalar() or 0
+
+    result = await db.execute(
+        select(StudentSubmission)
+        .order_by(StudentSubmission.submitted_at.desc())
+        .offset(p.offset)
+        .limit(p.page_size)
+    )
+    subs = result.scalars().all()
+    items = [SubmissionResponse.model_validate(s) for s in subs]
+
+    return build_paginated_response(items, total, p)
+
+
 @router.get(
     "/exams/{exam_id}/submissions",
     response_model=PaginatedResponse[SubmissionResponse],

@@ -200,6 +200,53 @@ export interface UserResponse {
   created_at: string;
 }
 
+// --- Exam Summary ---
+
+export interface QuestionSummary {
+  question_id: string;
+  question_number: number;
+  question_text: string;
+  max_marks: number;
+  average_score: number;
+  average_percentage: number;
+  submissions_answered: number;
+  submissions_skipped: number;
+}
+
+export interface ExamSummaryResponse {
+  exam_id: string;
+  exam_title: string;
+  total_submissions: number;
+  average_score: number;
+  average_percentage: number;
+  highest_score: number;
+  lowest_score: number;
+  highest_percentage: number;
+  lowest_percentage: number;
+  total_marks: number;
+  per_question_summary: QuestionSummary[];
+}
+
+// --- Batch Evaluation ---
+
+export interface BatchSubmissionResult {
+  submission_id: string;
+  student_name: string | null;
+  status: string;
+  total_score: number;
+  max_possible_score: number;
+  percentage: number;
+  error: string | null;
+}
+
+export interface BatchEvaluateResponse {
+  total_submissions: number;
+  successful: number;
+  failed: number;
+  results: BatchSubmissionResult[];
+  message: string;
+}
+
 // --- Pagination ---
 
 export interface PaginatedResponse<T> {

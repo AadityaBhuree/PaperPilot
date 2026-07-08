@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
+  History,
   LayoutDashboard,
   FileText,
   Upload,
@@ -16,6 +17,7 @@ const navItems = [
   { to: '/exams', label: 'Exams', icon: ClipboardCheck },
   { to: '/upload', label: 'Upload', icon: Upload },
   { to: '/documents', label: 'Documents', icon: FileText },
+  { to: '/evaluations', label: 'History', icon: History },
 ];
 
 export default function Layout() {

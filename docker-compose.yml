@@ -1,0 +1,68 @@
+# =============================================================================
+# PaperPilot — Docker Compose
+# =============================================================================
+#
+# Start all services:
+#   docker compose up --build
+#
+# Stop and remove:
+#   docker compose down -v
+# =============================================================================
+
+services:
+
+  # ── PostgreSQL Database ──────────────────────────────────────────
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: paperpilot
+      POSTGRES_PASSWORD: paperpilot
+      POSTGRES_DB: paperpilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paperpilot -d paperpilot"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── FastAPI Backend ──────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Use the compose service name "db" as the hostname
+      DATABASE_URL: postgresql+asyncpg://paperpilot:paperpilot@db:5432/paperpilot
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: gemini-1.5-flash
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      DEBUG: "false"
+      UPLOAD_DIR: /app/uploads
+      OCR_LANGUAGES: en
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads:/app/uploads
+
+  # ── React Frontend (Nginx) ───────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  uploads:
