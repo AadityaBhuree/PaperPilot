@@ -10,6 +10,7 @@ build/
 *.egg
 .venv/
 venv/
+.gemini/
 
 # ==========================
 # Node
@@ -57,3 +58,8 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# ==========================
+# Gemini
+# ==========================
+memory.md
