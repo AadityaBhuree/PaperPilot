@@ -3,7 +3,13 @@
 import logging
 from pathlib import Path
 
+from fastapi import HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.config import settings
+from backend.models.document import DocumentStatus, OCRResult, UploadedDocument
+from backend.services.file_service import get_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -137,3 +143,38 @@ def process_document(file_path: Path, file_type: str) -> list[dict[str, object]]
         return _process_pdf(file_path)
 
     return _process_image(file_path)
+
+
+async def ensure_ocr_text(doc: UploadedDocument, db: AsyncSession) -> str:
+    """Ensure OCR has been run on the document, return extracted text."""
+    result = await db.execute(
+        select(OCRResult)
+        .where(OCRResult.document_id == doc.id)
+        .order_by(OCRResult.page_number)
+    )
+    existing = result.scalars().all()
+
+    if existing:
+        return "\n\n".join(r.extracted_text for r in existing)
+
+    file_path = get_file_path(doc.stored_filename)
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found on disk")
+
+    page_results = process_document(file_path, doc.file_type)
+
+    full_text_parts: list[str] = []
+    for page in page_results:
+        ocr_result = OCRResult(
+            document_id=doc.id,
+            page_number=page["page_number"],
+            extracted_text=page["extracted_text"],
+            confidence=page["confidence"],
+        )
+        db.add(ocr_result)
+        full_text_parts.append(page["extracted_text"])
+
+    doc.status = DocumentStatus.COMPLETED
+    await db.flush()
+
+    return "\n\n".join(full_text_parts)

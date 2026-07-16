@@ -126,4 +126,4 @@ def _load_vector_store() -> FAISS | None:
 
     embeddings = _get_embeddings()
     logger.info("Loading FAISS index from %s", _INDEX_DIR)
-    return FAISS.load_local(str(_INDEX_DIR), embeddings, allow_dangerous_deserialization=True)
+    return FAISS.load_local(str(_INDEX_DIR), embeddings, allow_dangerous_deserialization=False)
