@@ -3,6 +3,7 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -115,6 +116,25 @@ async def get_document(
     """Retrieve document metadata and its OCR results."""
     doc = await _get_document_or_404(document_id, db)
     return DocumentResponse.model_validate(doc)
+
+
+@router.get("/{document_id}/download", response_class=FileResponse)
+async def download_document(
+    document_id: str,
+    db: AsyncSession = Depends(get_session),
+) -> FileResponse:
+    """Download the original uploaded document."""
+    doc = await _get_document_or_404(document_id, db)
+    file_path = get_file_path(doc.stored_filename)
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found on disk")
+        
+    media_type = "application/pdf" if doc.file_type == "pdf" else f"image/{doc.file_type}"
+    return FileResponse(
+        path=file_path,
+        filename=doc.original_filename,
+        media_type=media_type,
+    )
 
 
 @router.get("/", response_model=PaginatedResponse[DocumentResponse])
