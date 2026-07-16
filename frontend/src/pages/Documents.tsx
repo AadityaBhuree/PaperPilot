@@ -24,6 +24,27 @@ export default function Documents() {
     listDocuments(1, 100).then((r) => setDocs(r.items)).finally(() => setLoading(false));
   }, []);
 
+  // Poll for status updates if any document is processing or pending
+  useEffect(() => {
+    const hasActiveDocs = docs.some(d => d.status === 'pending' || d.status === 'processing');
+    let intervalId: ReturnType<typeof setInterval>;
+
+    if (hasActiveDocs) {
+      intervalId = setInterval(async () => {
+        try {
+          const updated = await listDocuments(1, 100);
+          setDocs(updated.items);
+        } catch (err) {
+          console.error('Failed to poll document status', err);
+        }
+      }, 3000);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [docs]);
+
   const handleDelete = async (id: string) => {
     await deleteDocument(id);
     setDocs((prev) => prev.filter((d) => d.id !== id));
