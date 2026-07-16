@@ -99,9 +99,9 @@ async def test_list_submissions_for_exam(client, sample_document, sample_exam):
 
 
 @pytest.mark.asyncio
-@patch("backend.api.evaluation.evaluate_answer", new_callable=AsyncMock)
-@patch("backend.api.evaluation.detect_questions", new_callable=AsyncMock)
-@patch("backend.api.evaluation.extract_answers", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.evaluate_answer", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.detect_questions", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.extract_answers", new_callable=AsyncMock)
 async def test_evaluate_submission(
     mock_extract,
     mock_detect,
@@ -139,9 +139,9 @@ async def test_evaluate_submission(
 
 
 @pytest.mark.asyncio
-@patch("backend.api.evaluation.evaluate_answer", new_callable=AsyncMock)
-@patch("backend.api.evaluation.detect_questions", new_callable=AsyncMock)
-@patch("backend.api.evaluation.extract_answers", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.evaluate_answer", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.detect_questions", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.extract_answers", new_callable=AsyncMock)
 async def test_get_evaluation_results(
     mock_extract,
     mock_detect,
@@ -174,9 +174,9 @@ async def test_get_evaluation_results(
 
 
 @pytest.mark.asyncio
-@patch("backend.api.evaluation.evaluate_answer", new_callable=AsyncMock)
-@patch("backend.api.evaluation.detect_questions", new_callable=AsyncMock)
-@patch("backend.api.evaluation.extract_answers", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.evaluate_answer", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.detect_questions", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.extract_answers", new_callable=AsyncMock)
 async def test_batch_evaluate(
     mock_extract,
     mock_detect,
@@ -215,9 +215,9 @@ async def test_batch_evaluate(
 
 
 @pytest.mark.asyncio
-@patch("backend.api.evaluation.evaluate_answer", new_callable=AsyncMock)
-@patch("backend.api.evaluation.detect_questions", new_callable=AsyncMock)
-@patch("backend.api.evaluation.extract_answers", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.evaluate_answer", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.detect_questions", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.extract_answers", new_callable=AsyncMock)
 async def test_batch_evaluate_with_failure(
     mock_extract,
     mock_detect,
@@ -275,9 +275,9 @@ async def test_exam_summary_empty(client, sample_exam):
 
 
 @pytest.mark.asyncio
-@patch("backend.api.evaluation.evaluate_answer", new_callable=AsyncMock)
-@patch("backend.api.evaluation.detect_questions", new_callable=AsyncMock)
-@patch("backend.api.evaluation.extract_answers", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.evaluate_answer", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.detect_questions", new_callable=AsyncMock)
+@patch("backend.services.evaluator_service.extract_answers", new_callable=AsyncMock)
 async def test_exam_summary_with_evaluations(
     mock_extract,
     mock_detect,
