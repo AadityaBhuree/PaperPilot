@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,6 +25,7 @@ router = APIRouter(prefix="/api/documents", tags=["documents"])
 
 @router.post("/upload", response_model=UploadResponse, status_code=201)
 async def upload_document(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_session),
 ) -> UploadResponse:
@@ -42,7 +43,9 @@ async def upload_document(
         status=DocumentStatus.PENDING,
     )
     db.add(doc)
-    await db.flush()
+    await db.commit()
+    
+    background_tasks.add_task(_run_ocr_background, doc.id)
 
     return UploadResponse(
         document_id=doc.id,
@@ -165,3 +168,27 @@ async def _get_document_or_404(
     if doc is None:
         raise HTTPException(status_code=404, detail="Document not found")
     return doc
+
+
+async def _run_ocr_background(document_id: str) -> None:
+    """Background task to run OCR on a newly uploaded document."""
+    from backend.database.connection import async_session_factory
+    from backend.services.ocr_service import ensure_ocr_text
+
+    async with async_session_factory() as session:
+        try:
+            doc = await _get_document_or_404(document_id, session)
+            doc.status = DocumentStatus.PROCESSING
+            await session.commit()
+            
+            await ensure_ocr_text(doc, session)
+            await session.commit()
+        except Exception as exc:
+            logger.error("Background OCR failed for doc %s: %s", document_id, exc)
+            # Try to mark as failed
+            try:
+                doc = await _get_document_or_404(document_id, session)
+                doc.status = DocumentStatus.FAILED
+                await session.commit()
+            except Exception:
+                pass

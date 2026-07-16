@@ -161,7 +161,8 @@ async def ensure_ocr_text(doc: UploadedDocument, db: AsyncSession) -> str:
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found on disk")
 
-    page_results = process_document(file_path, doc.file_type)
+    import asyncio
+    page_results = await asyncio.to_thread(process_document, file_path, doc.file_type)
 
     full_text_parts: list[str] = []
     for page in page_results:
