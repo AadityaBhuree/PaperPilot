@@ -12,6 +12,8 @@ from backend.main import app
 from backend.models.base import Base
 from backend.models.document import DocumentStatus, UploadedDocument
 from backend.models.exam import AnswerKey, Exam, Question, Rubric
+from backend.models.user import User, UserRole
+from backend.services.auth_service import get_current_user
 
 
 # ---------------------------------------------------------------------------
@@ -45,13 +47,31 @@ async def db_session(db_engine):
 
 
 @pytest_asyncio.fixture
-async def client(db_session: AsyncSession):
+async def test_user(db_session: AsyncSession) -> User:
+    """Create a default authenticated user for tests."""
+    user = User(
+        email="test@example.com",
+        password_hash="fake-hash",
+        display_name="Test User",
+        role=UserRole.TEACHER,
+    )
+    db_session.add(user)
+    await db_session.flush()
+    return user
+
+
+@pytest_asyncio.fixture
+async def client(db_session: AsyncSession, test_user: User):
     """Async HTTP test client wired to the same session as test data fixtures."""
 
     async def _override_get_session():
         yield db_session
 
+    async def _override_get_current_user():
+        return test_user
+
     app.dependency_overrides[get_session] = _override_get_session
+    app.dependency_overrides[get_current_user] = _override_get_current_user
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
@@ -66,13 +86,14 @@ async def client(db_session: AsyncSession):
 
 
 @pytest_asyncio.fixture
-async def sample_exam(db_session: AsyncSession) -> Exam:
+async def sample_exam(db_session: AsyncSession, test_user: User) -> Exam:
     """Create and persist a sample exam."""
     exam = Exam(
         title="Midterm Exam",
         description="Calculus I midterm",
         subject="Mathematics",
         total_marks=20,
+        user_id=test_user.id,
     )
     db_session.add(exam)
     await db_session.flush()
@@ -124,7 +145,7 @@ async def sample_answer_key(
 
 
 @pytest_asyncio.fixture
-async def sample_document(db_session: AsyncSession) -> UploadedDocument:
+async def sample_document(db_session: AsyncSession, test_user: User) -> UploadedDocument:
     """Create and persist a sample uploaded document with pre-existing OCR."""
     from backend.models.document import OCRResult
 
@@ -134,6 +155,7 @@ async def sample_document(db_session: AsyncSession) -> UploadedDocument:
         file_type="pdf",
         file_size=1024,
         status=DocumentStatus.COMPLETED,
+        user_id=test_user.id,
     )
     db_session.add(doc)
     await db_session.flush()

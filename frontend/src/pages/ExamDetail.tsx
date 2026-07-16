@@ -31,7 +31,7 @@ import type {
   EvaluationSummaryResponse,
 } from '../api/types';
 import { Skeleton } from '../components/Skeleton';
-import { Pagination } from '../components/Pagination';
+import Pagination from '../components/Pagination';
 
 type Tab = 'details' | 'submissions' | 'summary';
 

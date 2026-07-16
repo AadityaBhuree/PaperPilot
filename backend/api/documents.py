@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.connection import get_session
 from backend.models.document import DocumentStatus, OCRResult, UploadedDocument
+from backend.models.user import User
+from backend.services.auth_service import get_current_user
 from backend.schemas.document import (
     DocumentResponse,
     OCRResponse,
@@ -29,6 +31,7 @@ async def upload_document(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
 ) -> UploadResponse:
     """Upload an image or PDF for later OCR processing."""
     try:
@@ -42,6 +45,7 @@ async def upload_document(
         file_type=metadata["file_type"],
         file_size=metadata["file_size"],
         status=DocumentStatus.PENDING,
+        user_id=user.id,
     )
     db.add(doc)
     await db.commit()
@@ -60,9 +64,10 @@ async def upload_document(
 async def process_document_endpoint(
     document_id: str,
     db: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
 ) -> OCRResponse:
     """Run OCR on an already-uploaded document and store results."""
-    doc = await _get_document_or_404(document_id, db)
+    doc = await _get_document_or_404(document_id, db, user)
 
     # Update status to processing
     doc.status = DocumentStatus.PROCESSING
@@ -112,9 +117,10 @@ async def process_document_endpoint(
 async def get_document(
     document_id: str,
     db: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
 ) -> DocumentResponse:
     """Retrieve document metadata and its OCR results."""
-    doc = await _get_document_or_404(document_id, db)
+    doc = await _get_document_or_404(document_id, db, user)
     return DocumentResponse.model_validate(doc)
 
 
@@ -122,9 +128,10 @@ async def get_document(
 async def download_document(
     document_id: str,
     db: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
 ) -> FileResponse:
     """Download the original uploaded document."""
-    doc = await _get_document_or_404(document_id, db)
+    doc = await _get_document_or_404(document_id, db, user)
     file_path = get_file_path(doc.stored_filename)
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found on disk")
@@ -141,17 +148,19 @@ async def download_document(
 async def list_documents(
     p: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
 ) -> PaginatedResponse[DocumentResponse]:
     """List uploaded documents with pagination."""
     # Count total
     count_result = await db.execute(
-        select(func.count()).select_from(UploadedDocument)
+        select(func.count()).select_from(UploadedDocument).where(UploadedDocument.user_id == user.id)
     )
     total = count_result.scalar() or 0
 
     # Fetch page
     result = await db.execute(
         select(UploadedDocument)
+        .where(UploadedDocument.user_id == user.id)
         .order_by(UploadedDocument.uploaded_at.desc())
         .offset(p.offset)
         .limit(p.page_size)
@@ -166,9 +175,10 @@ async def list_documents(
 async def delete_document(
     document_id: str,
     db: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
 ) -> None:
     """Delete a document, its OCR results, and the stored file."""
-    doc = await _get_document_or_404(document_id, db)
+    doc = await _get_document_or_404(document_id, db, user)
 
     # Remove the file from disk
     delete_file(doc.stored_filename)
@@ -178,12 +188,14 @@ async def delete_document(
 
 
 async def _get_document_or_404(
-    document_id: str, db: AsyncSession
+    document_id: str, db: AsyncSession, user: User | None = None
 ) -> UploadedDocument:
     """Fetch a document by ID or raise 404."""
-    result = await db.execute(
-        select(UploadedDocument).where(UploadedDocument.id == document_id)
-    )
+    query = select(UploadedDocument).where(UploadedDocument.id == document_id)
+    if user:
+        query = query.where(UploadedDocument.user_id == user.id)
+    
+    result = await db.execute(query)
     doc = result.scalar_one_or_none()
     if doc is None:
         raise HTTPException(status_code=404, detail="Document not found")

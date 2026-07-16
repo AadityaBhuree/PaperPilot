@@ -27,6 +27,9 @@ class UploadedDocument(Base):
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
+    user_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True
+    )
     original_filename: Mapped[str] = mapped_column(String(255))
     stored_filename: Mapped[str] = mapped_column(String(255), unique=True)
     file_type: Mapped[str] = mapped_column(String(10))  # e.g. "pdf", "png", "jpg"
