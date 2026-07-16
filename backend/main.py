@@ -82,4 +82,9 @@ app.include_router(evaluation_router)
 @app.get("/", tags=["health"])
 async def root() -> dict[str, str]:
     """Health check endpoint."""
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "name": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "environment": "development" if settings.DEBUG else "production"
+    }
