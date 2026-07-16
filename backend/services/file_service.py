@@ -38,6 +38,13 @@ def _generate_stored_filename(original_filename: str) -> str:
     return f"{uuid.uuid4().hex}{ext}"
 
 
+MAGIC_BYTES = {
+    ".pdf": b"%PDF",
+    ".jpg": b"\xff\xd8\xff",
+    ".jpeg": b"\xff\xd8\xff",
+    ".png": b"\x89PNG\r\n\x1a\n",
+}
+
 async def save_upload(file: UploadFile) -> dict[str, str | int]:
     """Validate, save, and return metadata about the uploaded file.
 
@@ -46,6 +53,18 @@ async def save_upload(file: UploadFile) -> dict[str, str | int]:
     """
     filename = file.filename or "unknown"
     _validate_file(filename, file.content_type)
+    ext = _get_extension(filename)
+
+    # Validate magic bytes
+    first_chunk = await file.read(2048)
+    if not first_chunk:
+        raise ValueError("File is empty")
+        
+    expected_magic = MAGIC_BYTES.get(ext)
+    if expected_magic and not first_chunk.startswith(expected_magic):
+        raise ValueError(f"Invalid file content. Does not match extension {ext}")
+        
+    await file.seek(0)
 
     stored_name = _generate_stored_filename(filename)
     upload_dir = Path(settings.UPLOAD_DIR)
@@ -58,6 +77,8 @@ async def save_upload(file: UploadFile) -> dict[str, str | int]:
             file_size += len(chunk)
             if file_size > MAX_FILE_SIZE_BYTES:
                 await file.close()
+                # Clean up partially written file
+                file_path.unlink(missing_ok=True)
                 raise ValueError(
                     f"File exceeds maximum size of {settings.MAX_UPLOAD_SIZE_MB} MB"
                 )
