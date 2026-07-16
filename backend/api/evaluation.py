@@ -1,10 +1,13 @@
 """API routes for triggering and retrieving evaluation results."""
 
+import csv
+import io
 import json
 import logging
 from collections import defaultdict
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -392,4 +395,66 @@ async def get_evaluation_results(
     )
 
 
+@router.get("/exams/{exam_id}/export/csv")
+async def export_exam_csv(
+    exam_id: str,
+    db: AsyncSession = Depends(get_session),
+):
+    """Export exam evaluation results as a CSV file."""
+    # 1. Load exam
+    exam_result = await db.execute(
+        select(Exam)
+        .where(Exam.id == exam_id)
+        .options(selectinload(Exam.questions))
+    )
+    exam = exam_result.scalar_one_or_none()
+    if exam is None:
+        raise HTTPException(status_code=404, detail="Exam not found")
 
+    questions = sorted(exam.questions, key=lambda q: q.question_number)
+
+    # 2. Load submissions
+    sub_result = await db.execute(
+        select(StudentSubmission)
+        .where(StudentSubmission.exam_id == exam_id)
+        .order_by(StudentSubmission.submitted_at)
+    )
+    submissions = sub_result.scalars().all()
+    sub_ids = [s.id for s in submissions]
+
+    # 3. Load evaluations
+    evals_by_sub = defaultdict(dict)
+    if sub_ids:
+        eval_result = await db.execute(
+            select(Evaluation).where(Evaluation.submission_id.in_(sub_ids))
+        )
+        for ev in eval_result.scalars().all():
+            evals_by_sub[ev.submission_id][ev.question_id] = ev.score
+
+    # 4. Generate CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    header = ["Submission ID", "Student Name", "Total Score", "Percentage"]
+    for q in questions:
+        header.append(f"Q{q.question_number} Score")
+    writer.writerow(header)
+
+    for sub in submissions:
+        row = [sub.id, sub.student_name or "Unknown"]
+        evals = evals_by_sub.get(sub.id, {})
+        total_score = sum(evals.values())
+        percentage = (total_score / exam.total_marks * 100) if exam.total_marks > 0 else 0.0
+        
+        row.extend([round(total_score, 2), round(percentage, 2)])
+        for q in questions:
+            row.append(round(evals.get(q.id, 0.0), 2))
+        
+        writer.writerow(row)
+
+    output.seek(0)
+    return StreamingResponse(
+        output,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=exam_{exam_id}_results.csv"}
+    )
