@@ -9,6 +9,8 @@ import {
   GraduationCap,
   Menu,
   LogOut,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -22,13 +24,27 @@ const navItems = [
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    return document.documentElement.classList.contains('dark');
+  });
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const closeSidebar = () => setSidebarOpen(false);
 
+  const toggleDarkMode = () => {
+    const root = document.documentElement;
+    if (root.classList.contains('dark')) {
+      root.classList.remove('dark');
+      setIsDark(false);
+    } else {
+      root.classList.add('dark');
+      setIsDark(true);
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 text-gray-900">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -76,9 +92,18 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* User info */}
+        {/* User info & Dark mode */}
         {user && (
           <div className="px-6 py-4 border-t border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={toggleDarkMode}
+                className="flex items-center gap-2 px-2 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors w-full"
+              >
+                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {isDark ? 'Light Mode' : 'Dark Mode'}
+              </button>
+            </div>
             <div className="flex items-center justify-between">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{user.display_name}</p>
