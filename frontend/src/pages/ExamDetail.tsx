@@ -327,17 +327,15 @@ function ExamSubmissionsTab({
   }, [examId, page]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSubmissions();
   }, [loadSubmissions]);
 
   // Reset selections when page changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelected(new Set());
   }, [page]);
-
-  useEffect(() => {
-    loadSubmissions();
-  }, [loadSubmissions]);
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {

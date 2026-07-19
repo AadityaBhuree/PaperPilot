@@ -71,6 +71,7 @@ export default function EvaluationHistory() {
   }, [page]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSubmissions();
   }, [loadSubmissions]);
 
