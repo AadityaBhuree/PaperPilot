@@ -113,6 +113,25 @@ async def process_document_endpoint(
     )
 
 
+from fastapi.responses import FileResponse, StreamingResponse
+from backend.services.sse_service import sse_manager
+
+@router.get("/{document_id}/events")
+async def stream_document_events(
+    document_id: str,
+    db: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    """Stream live OCR progress updates using Server-Sent Events (SSE)."""
+    await _get_document_or_404(document_id, db, user)
+    queue = sse_manager.subscribe(document_id)
+    return StreamingResponse(
+        sse_manager.event_generator(document_id, queue),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+    )
+
+
 @router.get("/{document_id}", response_model=DocumentResponse)
 async def get_document(
     document_id: str,
