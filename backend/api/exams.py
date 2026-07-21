@@ -278,24 +278,54 @@ async def add_rubric(
     return RubricResponse.model_validate(rubric)
 
 
-@router.get(
-    "/{exam_id}/questions/{question_id}/rubrics",
-    response_model=list[RubricResponse],
-)
-async def list_rubrics(
+from backend.services.rubric_generator import generate_rubric_and_key
+
+
+@router.post("/{exam_id}/questions/{question_id}/ai-generate-rubric")
+async def ai_generate_question_rubric(
     exam_id: str,
     question_id: str,
     db: AsyncSession = Depends(get_session),
     user: User = Depends(get_current_user),
-) -> list[RubricResponse]:
-    """List all rubric criteria for a question."""
-    await _get_question_or_404(exam_id, question_id, db, user)
+):
+    """Auto-generate reference answer key and rubrics for a question using Gemini 1.5."""
+    q = await _get_question_or_404(exam_id, question_id, db, user)
+    generated = await generate_rubric_and_key(q.question_number, q.question_text, float(q.max_marks))
 
-    result = await db.execute(
-        select(Rubric).where(Rubric.question_id == question_id)
-    )
-    rubrics = result.scalars().all()
-    return [RubricResponse.model_validate(r) for r in rubrics]
+    # Persist or update AnswerKey
+    ak_res = await db.execute(select(AnswerKey).where(AnswerKey.question_id == question_id))
+    ak = ak_res.scalar_one_or_none()
+    import json
+    if ak:
+        ak.reference_answer = generated["reference_answer"]
+        ak.key_concepts = json.dumps(generated["key_concepts"])
+    else:
+        ak = AnswerKey(
+            question_id=question_id,
+            reference_answer=generated["reference_answer"],
+            key_concepts=json.dumps(generated["key_concepts"]),
+        )
+        db.add(ak)
+
+    # Add Rubric criteria
+    created_rubrics = []
+    for r_data in generated["rubrics"]:
+        rubric = Rubric(
+            question_id=question_id,
+            criterion=r_data["criterion"],
+            description=r_data["description"],
+            max_score=r_data["max_score"],
+            weight=r_data.get("weight", 1.0),
+        )
+        db.add(rubric)
+        created_rubrics.append(rubric)
+
+    await db.flush()
+    return {
+        "status": "success",
+        "answer_key": AnswerKeyResponse.model_validate(ak),
+        "rubrics": [RubricResponse.model_validate(r) for r in created_rubrics],
+    }
 
 
 # ---------------------------------------------------------------------------
