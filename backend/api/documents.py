@@ -144,6 +144,26 @@ async def download_document(
     )
 
 
+@router.get("/{document_id}/file", response_class=FileResponse)
+async def preview_document_file(
+    document_id: str,
+    db: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> FileResponse:
+    """Stream original uploaded file for inline previewing."""
+    doc = await _get_document_or_404(document_id, db, user)
+    file_path = get_file_path(doc.stored_filename)
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found on disk")
+        
+    media_type = "application/pdf" if doc.file_type == "pdf" else f"image/{doc.file_type}"
+    return FileResponse(
+        path=file_path,
+        media_type=media_type,
+        headers={"Content-Disposition": "inline"},
+    )
+
+
 @router.get("/", response_model=PaginatedResponse[DocumentResponse])
 async def list_documents(
     p: PaginationParams = Depends(),
