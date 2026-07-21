@@ -14,6 +14,7 @@ import EvaluationHistory from './pages/EvaluationHistory';
 import SubmissionResults from './pages/SubmissionResults';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import { MockExam } from './pages/MockExam';
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
               <Route path="/evaluate" element={<Evaluation />} />
               <Route path="/evaluations" element={<EvaluationHistory />} />
               <Route path="/submissions/:submissionId/results" element={<SubmissionResults />} />
+              <Route path="/mock-exam" element={<MockExam />} />
             </Route>
           </Route>
 
