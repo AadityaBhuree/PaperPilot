@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BookOpen, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { api } from '../api/client';
-import type { ExamDetailResponse, EvaluationSummaryResponse } from '../api/types';
+import type { ExamDetailResponse, EvaluationSummaryResponse, QuestionDetailResponse } from '../api/types';
 
 export const MockExam: React.FC = () => {
   const [exams, setExams] = useState<ExamDetailResponse[]>([]);
@@ -110,7 +110,7 @@ export const MockExam: React.FC = () => {
             <h3 className="text-md font-semibold text-slate-900 dark:text-slate-100">
               2. Exam Questions
             </h3>
-            {selectedExam.questions.map((q: any) => (
+            {selectedExam.questions.map((q: QuestionDetailResponse) => (
               <div key={q.id} className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
                 <div className="flex justify-between items-center text-sm">
                   <span className="font-semibold text-indigo-600 dark:text-indigo-400">
