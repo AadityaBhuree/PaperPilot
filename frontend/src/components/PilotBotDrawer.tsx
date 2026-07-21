@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Bot, Send, X, Loader2 } from 'lucide-react';
 import { api } from '../api/client';
 
@@ -28,6 +28,18 @@ export const PilotBotDrawer: React.FC<PilotBotDrawerProps> = ({
       text: `Hi! I'm PilotBot 🤖. Ask me why points were deducted on Question #${questionNumber} or how to write a full-mark answer!`,
     },
   ]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
