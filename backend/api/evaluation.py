@@ -248,6 +248,20 @@ async def batch_evaluate(
 
 
 from backend.services.evaluation_service import generate_exam_summary_service, generate_gradebook_csv_bytes
+from backend.services.report_service import generate_class_remediation_insights
+
+@router.get("/exams/{exam_id}/remediation")
+async def get_exam_remediation_insights(
+    exam_id: str,
+    db: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    """Generate AI class weakness and remediation insights."""
+    insights = await generate_class_remediation_insights(exam_id, user.id, db)
+    if "error" in insights:
+        raise HTTPException(status_code=404, detail=insights["error"])
+    return insights
+
 
 @router.get(
     "/exams/{exam_id}/summary",
