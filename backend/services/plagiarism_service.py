@@ -11,6 +11,19 @@ from backend.models.exam import Exam
 logger = logging.getLogger(__name__)
 
 
+_embedder = None
+
+
+def _get_embedder():
+    """Return shared SentenceTransformer model instance to optimize RAM budget."""
+    global _embedder  # noqa: PLW0603
+    if _embedder is None:
+        from sentence_transformers import SentenceTransformer
+        logger.info("Initializing SentenceTransformer model for plagiarism detection")
+        _embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+    return _embedder
+
+
 async def generate_plagiarism_report(
     exam_id: str,
     user_id: str,
@@ -65,8 +78,7 @@ async def generate_plagiarism_report(
 
     flagged_pairs = []
     try:
-        from sentence_transformers import SentenceTransformer
-        embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+        embedder = _get_embedder()
         texts = [answers_by_sub[sid] for sid in valid_subs]
         embeddings = embedder.encode(texts, normalize_embeddings=True)
 
