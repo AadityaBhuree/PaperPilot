@@ -351,6 +351,9 @@ class ScoreOverrideRequest(BaseModel):
     feedback: str | None = None
 
 
+from backend.models.user import UserRole
+
+
 @router.post("/evaluations/{evaluation_id}/tutor-chat")
 async def pilotbot_tutor_chat(
     evaluation_id: int,
@@ -359,6 +362,16 @@ async def pilotbot_tutor_chat(
     user: User = Depends(get_current_user),
 ):
     """Converse with PilotBot AI tutor for personalized evaluation explanations."""
+    eval_result = await db.execute(
+        select(Evaluation)
+        .join(StudentSubmission, Evaluation.submission_id == StudentSubmission.id)
+        .join(Exam, StudentSubmission.exam_id == Exam.id)
+        .where(Evaluation.id == evaluation_id, Exam.user_id == user.id)
+    )
+    ev = eval_result.scalar_one_or_none()
+    if not ev:
+        raise HTTPException(status_code=404, detail="Evaluation not found")
+
     reply = await chat_with_pilotbot(evaluation_id, body.user_query, db)
     if "error" in reply:
         raise HTTPException(status_code=404, detail=reply["error"])
@@ -373,8 +386,16 @@ async def override_evaluation_score(
     user: User = Depends(get_current_user),
 ):
     """Allow teachers to manually override an AI evaluation score and feedback."""
+    if user.role != UserRole.TEACHER:
+        raise HTTPException(
+            status_code=403, detail="Only teachers can override evaluation scores"
+        )
+
     eval_result = await db.execute(
-        select(Evaluation).where(Evaluation.id == evaluation_id)
+        select(Evaluation)
+        .join(StudentSubmission, Evaluation.submission_id == StudentSubmission.id)
+        .join(Exam, StudentSubmission.exam_id == Exam.id)
+        .where(Evaluation.id == evaluation_id, Exam.user_id == user.id)
     )
     ev = eval_result.scalar_one_or_none()
     if not ev:
