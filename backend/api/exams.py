@@ -278,6 +278,26 @@ async def add_rubric(
     return RubricResponse.model_validate(rubric)
 
 
+@router.get(
+    "/{exam_id}/questions/{question_id}/rubrics",
+    response_model=list[RubricResponse],
+)
+async def list_rubrics(
+    exam_id: str,
+    question_id: str,
+    db: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> list[RubricResponse]:
+    """List all rubric criteria for a question."""
+    await _get_question_or_404(exam_id, question_id, db, user)
+
+    result = await db.execute(
+        select(Rubric).where(Rubric.question_id == question_id)
+    )
+    rubrics = result.scalars().all()
+    return [RubricResponse.model_validate(r) for r in rubrics]
+
+
 from backend.services.rubric_generator import generate_rubric_and_key
 
 

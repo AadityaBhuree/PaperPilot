@@ -338,19 +338,50 @@ async def get_evaluation_results(
     )
 
 
-@router.get("/exams/{exam_id}/export/csv")
-async def export_exam_csv(
-    exam_id: str,
+from pydantic import BaseModel, Field
+from backend.services.tutor_service import chat_with_pilotbot
+
+
+class TutorChatRequest(BaseModel):
+    user_query: str = Field(..., min_length=1)
+
+
+class ScoreOverrideRequest(BaseModel):
+    new_score: float = Field(..., ge=0.0)
+    feedback: str | None = None
+
+
+@router.post("/evaluations/{evaluation_id}/tutor-chat")
+async def pilotbot_tutor_chat(
+    evaluation_id: int,
+    body: TutorChatRequest,
     db: AsyncSession = Depends(get_session),
     user: User = Depends(get_current_user),
 ):
-    """Export exam evaluation results as a CSV file."""
-    output, exam = await generate_gradebook_csv_bytes(exam_id, user.id, db)
-    if output is None or exam is None:
-        raise HTTPException(status_code=404, detail="Exam not found")
+    """Converse with PilotBot AI tutor for personalized evaluation explanations."""
+    reply = await chat_with_pilotbot(evaluation_id, body.user_query, db)
+    if "error" in reply:
+        raise HTTPException(status_code=404, detail=reply["error"])
+    return reply
 
-    return StreamingResponse(
-        output,
-        media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=exam_{exam_id}_results.csv"}
+
+@router.patch("/evaluations/{evaluation_id}/override")
+async def override_evaluation_score(
+    evaluation_id: int,
+    body: ScoreOverrideRequest,
+    db: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    """Allow teachers to manually override an AI evaluation score and feedback."""
+    eval_result = await db.execute(
+        select(Evaluation).where(Evaluation.id == evaluation_id)
     )
+    ev = eval_result.scalar_one_or_none()
+    if not ev:
+        raise HTTPException(status_code=404, detail="Evaluation not found")
+
+    ev.score = body.new_score
+    if body.feedback:
+        ev.feedback = body.feedback
+    await db.flush()
+    return to_eval_response(ev)
