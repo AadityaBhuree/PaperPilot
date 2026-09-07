@@ -12,7 +12,7 @@ from backend.config import settings
 
 logger = logging.getLogger(__name__)
 
-ALLOWED_EXTENSIONS: set[str] = {".pdf", ".jpg", ".jpeg", ".png"}
+ALLOWED_EXTENSIONS: set[str] = {".pdf", ".jpg", ".jpeg", ".png", ".webp"}
 MAX_FILE_SIZE_BYTES = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
 
@@ -23,7 +23,7 @@ def _get_extension(filename: str) -> str:
 
 
 def _validate_file(filename: str, content_type: str | None) -> None:
-    """Raise ValueError if the file type or size is not allowed."""
+    """Raise ValueError if the file type is not allowed."""
     ext = _get_extension(filename)
     if ext not in ALLOWED_EXTENSIONS:
         raise ValueError(
@@ -38,12 +38,28 @@ def _generate_stored_filename(original_filename: str) -> str:
     return f"{uuid.uuid4().hex}{ext}"
 
 
-MAGIC_BYTES = {
-    ".pdf": b"%PDF",
-    ".jpg": b"\xff\xd8\xff",
-    ".jpeg": b"\xff\xd8\xff",
-    ".png": b"\x89PNG\r\n\x1a\n",
-}
+def validate_magic_bytes(header: bytes, ext: str) -> None:
+    """Validate file header bytes against expected binary signatures.
+
+    Guards against file extension spoofing attacks (e.g. uploading malicious scripts or binaries).
+    """
+    if not header:
+        raise ValueError("File is empty")
+
+    ext = ext.lower()
+    if ext == ".pdf":
+        if not header.startswith(b"%PDF"):
+            raise ValueError("Invalid PDF file: Missing '%PDF' header signature")
+    elif ext in {".jpg", ".jpeg"}:
+        if not (header.startswith(b"\xff\xd8\xff") or header.startswith(b"\xff\xd8")):
+            raise ValueError(f"Invalid JPEG image: Header signature mismatch for {ext}")
+    elif ext == ".png":
+        if not header.startswith(b"\x89PNG\r\n\x1a\n"):
+            raise ValueError("Invalid PNG image: Header signature mismatch for .png")
+    elif ext == ".webp":
+        if not (header.startswith(b"RIFF") and len(header) >= 12 and header[8:12] == b"WEBP"):
+            raise ValueError("Invalid WebP image: Header signature mismatch for .webp")
+
 
 async def save_upload(file: UploadFile) -> dict[str, str | int]:
     """Validate, save, and return metadata about the uploaded file.
@@ -57,13 +73,7 @@ async def save_upload(file: UploadFile) -> dict[str, str | int]:
 
     # Validate magic bytes
     first_chunk = await file.read(2048)
-    if not first_chunk:
-        raise ValueError("File is empty")
-        
-    expected_magic = MAGIC_BYTES.get(ext)
-    if expected_magic and not first_chunk.startswith(expected_magic):
-        raise ValueError(f"Invalid file content. Does not match extension {ext}")
-        
+    validate_magic_bytes(first_chunk, ext)
     await file.seek(0)
 
     stored_name = _generate_stored_filename(filename)
