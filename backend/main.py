@@ -4,8 +4,7 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-import time
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -18,6 +17,7 @@ from backend.api.documents import router as documents_router
 from backend.api.exams import router as exams_router
 from backend.api.evaluation import router as evaluation_router
 from backend.middleware.rate_limiter import limiter
+from backend.middleware.request_logger import RequestLoggingMiddleware
 
 logging.basicConfig(
     level=logging.DEBUG if settings.DEBUG else logging.INFO,
@@ -42,23 +42,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    """Log incoming requests and their processing time."""
-    start_time = time.time()
-    response = await call_next(request)
-    process_time = time.time() - start_time
-    
-    client_ip = request.client.host if request.client else "unknown"
-    logger.info(
-        "%s - %s %s - %s - %.4fs",
-        client_ip,
-        request.method,
-        request.url.path,
-        response.status_code,
-        process_time,
-    )
-    return response
+# Structured request/response logging & tracing
+app.add_middleware(RequestLoggingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
