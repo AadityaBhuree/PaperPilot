@@ -64,12 +64,56 @@ app.include_router(exams_router)
 app.include_router(evaluation_router)
 
 
+from pathlib import Path
+import os
+from fastapi import Response, status
+from sqlalchemy import text
+from backend.database.connection import engine
+
+
 @app.get("/", tags=["health"])
-async def root() -> dict[str, str]:
-    """Health check endpoint."""
+@app.get("/health", tags=["health"])
+async def health_check() -> dict[str, object]:
+    """Comprehensive health and diagnostic check."""
+    db_ok = False
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+            db_ok = True
+    except Exception as exc:
+        logger.warning("Database health check failed: %s", exc)
+
+    upload_dir = Path(settings.UPLOAD_DIR)
+    storage_ready = upload_dir.exists() or os.access(upload_dir.parent, os.W_OK)
+
+    is_healthy = db_ok
+
     return {
-        "status": "ok",
+        "status": "healthy" if is_healthy else "degraded",
         "name": settings.APP_NAME,
         "version": settings.APP_VERSION,
-        "environment": "development" if settings.DEBUG else "production"
+        "environment": "development" if settings.DEBUG else "production",
+        "components": {
+            "database": "connected" if db_ok else "unreachable",
+            "ai_service": "configured" if bool(settings.GEMINI_API_KEY) else "not_configured",
+            "storage": "ready" if storage_ready else "degraded",
+        },
     }
+
+
+@app.get("/health/live", tags=["health"])
+async def liveness_probe() -> dict[str, str]:
+    """Liveness probe: returns 200 if the app process is up."""
+    return {"status": "alive"}
+
+
+@app.get("/health/ready", tags=["health"])
+async def readiness_probe(response: Response) -> dict[str, str]:
+    """Readiness probe: returns 200 if the app can accept traffic, 503 otherwise."""
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        return {"status": "ready"}
+    except Exception:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {"status": "not_ready"}
