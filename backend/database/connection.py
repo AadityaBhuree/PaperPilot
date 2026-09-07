@@ -11,20 +11,36 @@ from sqlalchemy.ext.asyncio import (
 from backend.config import settings
 
 
+def normalize_database_url(url: str) -> str:
+    """Ensure database URL has the correct async driver scheme.
+
+    Translates standard postgresql:// or postgres:// to postgresql+asyncpg://,
+    and sqlite:/// to sqlite+aiosqlite:///.
+    """
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+asyncpg://", 1)
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    if url.startswith("sqlite:///") and not url.startswith("sqlite+aiosqlite:///"):
+        return url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
+    return url
+
+
 # ── Engine ──────────────────────────────────────────────────────────────────
-# Use connection pooling for PostgreSQL, simple engine for SQLite.
-_is_postgres = settings.DATABASE_URL.startswith("postgresql")
+DATABASE_URL = normalize_database_url(settings.DATABASE_URL)
+_is_postgres = DATABASE_URL.startswith("postgresql")
 
 engine_kwargs: dict[str, object] = {
     "echo": settings.DEBUG,
 }
 
 if _is_postgres:
-    engine_kwargs["pool_size"] = 5
-    engine_kwargs["max_overflow"] = 10
+    engine_kwargs["pool_size"] = 10
+    engine_kwargs["max_overflow"] = 20
     engine_kwargs["pool_pre_ping"] = True
+    engine_kwargs["pool_recycle"] = 3600
 
-engine = create_async_engine(settings.DATABASE_URL, **engine_kwargs)
+engine = create_async_engine(DATABASE_URL, **engine_kwargs)
 
 async_session_factory = async_sessionmaker(
     engine,

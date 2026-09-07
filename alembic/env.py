@@ -23,11 +23,12 @@ from backend.models.exam import Exam, Question, AnswerKey, Rubric  # noqa: F401
 from backend.models.evaluation import StudentSubmission, Evaluation  # noqa: F401
 
 from backend.config import settings
+from backend.database.connection import normalize_database_url
 
 target_metadata = Base.metadata
 
-# Override the database URL from application settings.
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Override the database URL from application settings (normalized for async driver)
+config.set_main_option("sqlalchemy.url", normalize_database_url(settings.DATABASE_URL))
 
 
 def run_migrations_offline() -> None:
