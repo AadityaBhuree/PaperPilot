@@ -321,49 +321,49 @@ All use `model_config = {"from_attributes": True}` for ORM mode, proper validati
 
 ## 3.1 Critical Gaps (Blocking Production)
 
-| # | Issue | Impact | Affected Area |
-|---|-------|--------|---------------|
+| # | Issue | Impact | Affected Area | Status |
+|---|-------|--------|---------------|--------|
 | ~~🔴 1~~ | ~~**No authentication/authorization**~~ | ~~Anyone can access all endpoints~~ | ~~All~~ | ✅ **Resolved** — JWT auth with User model, login/register, protected routes, AuthContext, role-based access |
-| 🟡 2 | **No .env.example file** | New developers don't know what vars to set | `config.py` |
+| ~~🟡 2~~ | ~~**No .env.example file**~~ | ~~New developers don't know what vars to set~~ | ~~`config.py`~~ | ✅ **Resolved** — `.env.example` template with clear instructions |
 | ~~🔴 3~~ | ~~**No database migrations (Alembic)**~~ | ~~Schema changes are manual/risky~~ | ~~Database~~ | ✅ **Resolved** — `alembic/` with initial migrations |
-| 🔴 4 | **No production database** | SQLite doesn't handle concurrency; data lost on container restart | Database |
-| 🔴 5 | **No Docker setup** | No containerization for reproducible deployments | DevOps |
+| ~~🔴 4~~ | ~~**No production database**~~ | ~~SQLite doesn't handle concurrency~~ | ~~Database~~ | ✅ **Resolved** — `asyncpg` engine, connection pooling, and driver URI normalization |
+| ~~🔴 5~~ | ~~**No Docker setup**~~ | ~~No containerization for reproducible deployments~~ | ~~DevOps~~ | ✅ **Resolved** — Multi-stage frontend Dockerfile, backend Dockerfile, docker-compose with healthchecks |
 
 ## 3.2 Backend Gaps
 
-| # | Issue | Priority | Details |
-|---|-------|----------|---------|
-| 🟡 6 | No file upload magic-byte validation | Medium | Only validates by extension, not content |
-| ~~🟡 7~~ | ~~No request rate limiting~~ | ~~Medium~~ | ✅ **Resolved** — SlowAPI rate limiter middleware configured globally |
-| 🟡 8 | No structured logging / log aggregation | Low | Basic Python logging only |
-| 🟡 9 | No health check details | Low | Root endpoint returns only `{"status": "ok"}` |
-| 🟡 10 | No document preview/download endpoint | Medium | Users can't view uploaded files via API |
-| 🟡 11 | No export functionality (CSV/PDF) | Medium | Can't export evaluation reports |
-| 🟡 12 | OCR language config is basic | Low | Single language string, no auto-detection |
-| ~~🟡 13~~ | ~~No batch operation progress tracking~~ | ~~Medium~~ | ✅ **Resolved** — `/batch-evaluate` endpoint returns per-item status with individual errors |
-| 🟡 14 | No request/response logging middleware | Low | Hard to debug API issues in production |
-| 🟡 15 | `_ensure_ocr_text` runs OCR inline | Medium | Would block on large documents; no background task |
-| ~~🟡 16~~ | ~~No pagination on list endpoints~~ | ~~Medium~~ | ✅ **Resolved** — `/documents`, `/exams`, `/submissions` all paginated via `PaginationParams` |
+| # | Issue | Priority | Details | Status |
+|---|-------|----------|---------|--------|
+| ~~🟡 6~~ | ~~No file upload magic-byte validation~~ | ~~Medium~~ | ~~Only validates by extension~~ | ✅ **Resolved** — `validate_magic_bytes` inspecting header signatures (PDF, PNG, JPEG, WEBP) |
+| ~~🟡 7~~ | ~~No request rate limiting~~ | ~~Medium~~ | ~~SlowAPI rate limiter middleware configured globally~~ | ✅ **Resolved** |
+| ~~🟡 8~~ | ~~No structured logging / log aggregation~~ | ~~Low~~ | ~~Basic Python logging only~~ | ✅ **Resolved** — `RequestLoggingMiddleware` with `X-Request-ID` and timing |
+| ~~🟡 9~~ | ~~No health check details~~ | ~~Low~~ | ~~Root endpoint returns only `{"status": "ok"}`~~ | ✅ **Resolved** — `/health`, `/health/live`, `/health/ready` with DB and AI diagnostics |
+| 🟡 10 | No document preview/download endpoint | Medium | Users can't view uploaded files via API | ❌ Missing |
+| 🟡 11 | No export functionality (CSV/PDF) | Medium | Can't export evaluation reports | ❌ Missing |
+| 🟡 12 | OCR language config is basic | Low | Single language string, no auto-detection | ❌ Missing |
+| ~~🟡 13~~ | ~~No batch operation progress tracking~~ | ~~Medium~~ | ~~`/batch-evaluate` endpoint returns per-item status~~ | ✅ **Resolved** |
+| ~~🟡 14~~ | ~~No request/response logging middleware~~ | ~~Low~~ | ~~Hard to debug API issues in production~~ | ✅ **Resolved** |
+| 🟡 15 | `_ensure_ocr_text` runs OCR inline | Medium | Would block on large documents; no background task | ❌ Missing |
+| ~~🟡 16~~ | ~~No pagination on list endpoints~~ | ~~Medium~~ | ~~`/documents`, `/exams`, `/submissions` all paginated~~ | ✅ **Resolved** |
 
 ## 3.3 Frontend Gaps
 
-| # | Issue | Priority | Details |
-|---|-------|----------|---------|
-| 🟡 17 | **Title tag says "Mainframe"** | Low | `index.html` title should be "PaperPilot" |
-| 🟡 18 | **MainframeLanding page is unrelated** | Low | Creative agency landing page, not part of PaperPilot |
-| ~~🟡 19~~ | ~~No loading skeletons~~ | ~~Medium~~ | ✅ **Resolved** — `Skeleton.tsx` with Line, Block, Card, List, StatsGrid, DetailHeader patterns |
-| ~~🟡 20~~ | ~~No error boundaries~~ | ~~Medium~~ | ✅ **Resolved** — `ErrorBoundary.tsx` wrapping the whole app |
-| ~~🟡 21~~ | ~~No pagination on lists~~ | ~~Medium~~ | ✅ **Resolved** — `Pagination.tsx` component used in ExamList, Documents, EvaluationHistory, ExamDetail |
-| ~~🟡 22~~ | ~~No search/filter on exams or documents~~ | ~~Low~~ | ✅ **Resolved** — search on ExamList + Documents pages |
-| ~~🟡 23~~ | ~~No toast notifications~~ | ~~Medium~~ | ✅ **Resolved** — `Toast.tsx` context-based system with auto-dismiss and success/error/info variants |
-| ~~🟡 24~~ | ~~No mobile-responsive sidebar~~ | ~~Medium~~ | ✅ **Resolved** — collapsible sidebar with hamburger toggle + backdrop overlay |
-| ~~🟡 25~~ | ~~No exam summary results view~~ | ~~Medium~~ | ✅ **Resolved** — `ExamSummary.tsx` page with per-question breakdown, stats grid, detailed score table |
-| ~~🟡 26~~ | ~~No evaluation history page~~ | ~~Medium~~ | ✅ **Resolved** — `EvaluationHistory.tsx` with search, exam filter, pagination, score cards |
-| ~~🟡 27~~ | ~~No real-time OCR status updates~~ | ~~Low~~ | 🔄 Still missing — user must manually refresh |
-| ~~🟡 28~~ | ~~No progress bar for batch evaluation~~ | ~~Medium~~ | ✅ **Resolved** — per-submission progress tracking with status icons in ExamDetail submissions tab |
-| ~~🟡 29~~ | ~~No confirmation dialogs (uses native `confirm()`)~~ | ~~Medium~~ | ✅ **Resolved** — `ConfirmDialog.tsx` replacing native confirm on documents and exams |
-| ~~🟡 30~~ | ~~Upload flow doesn't navigate to results~~ | ~~Low~~ | ✅ **Resolved** — success state links to evaluation or history |
-| 🟡 31 | No dark mode | Low | Not requested but noteworthy |
+| # | Issue | Priority | Details | Status |
+|---|-------|----------|---------|--------|
+| ~~🟡 17~~ | ~~**Title tag says "Mainframe"**~~ | ~~Low~~ | ~~`index.html` title should be "PaperPilot"~~ | ✅ **Resolved** — title and meta tags updated to PaperPilot |
+| ~~🟡 18~~ | ~~**MainframeLanding page is unrelated**~~ | ~~Low~~ | ~~Creative agency landing page~~ | ✅ **Resolved** — removed deprecated file |
+| ~~🟡 19~~ | ~~No loading skeletons~~ | ~~Medium~~ | ~~`Skeleton.tsx` with 6 patterns~~ | ✅ **Resolved** |
+| ~~🟡 20~~ | ~~No error boundaries~~ | ~~Medium~~ | ~~`ErrorBoundary.tsx` wrapping the whole app~~ | ✅ **Resolved** |
+| ~~🟡 21~~ | ~~No pagination on lists~~ | ~~Medium~~ | ~~`Pagination.tsx` component used across pages~~ | ✅ **Resolved** |
+| ~~🟡 22~~ | ~~No search/filter on exams or documents~~ | ~~Low~~ | ~~Search on ExamList + Documents pages~~ | ✅ **Resolved** |
+| ~~🟡 23~~ | ~~No toast notifications~~ | ~~Medium~~ | ~~`Toast.tsx` context-based system~~ | ✅ **Resolved** |
+| ~~🟡 24~~ | ~~No mobile-responsive sidebar~~ | ~~Medium~~ | ~~Collapsible sidebar with hamburger toggle~~ | ✅ **Resolved** |
+| ~~🟡 25~~ | ~~No exam summary results view~~ | ~~Medium~~ | ~~`ExamSummary.tsx` page~~ | ✅ **Resolved** |
+| ~~🟡 26~~ | ~~No evaluation history page~~ | ~~Medium~~ | ~~`EvaluationHistory.tsx`~~ | ✅ **Resolved** |
+| ~~🟡 27~~ | ~~No real-time OCR status updates~~ | ~~Low~~ | ~~SSE stream for real-time processing~~ | ✅ **Resolved** |
+| ~~🟡 28~~ | ~~No progress bar for batch evaluation~~ | ~~Medium~~ | ~~Per-submission progress tracking~~ | ✅ **Resolved** |
+| ~~🟡 29~~ | ~~No confirmation dialogs~~ | ~~Medium~~ | ~~`ConfirmDialog.tsx` replacing native confirm~~ | ✅ **Resolved** |
+| ~~🟡 30~~ | ~~Upload flow doesn't navigate to results~~ | ~~Low~~ | ~~Success state links to evaluation/history~~ | ✅ **Resolved** |
+| 🟡 31 | No dark mode | Low | Not requested but noteworthy | ❌ Missing |
 
 ## 3.4 Cross-Cutting Gaps
 
@@ -375,7 +375,7 @@ All use `model_config = {"from_attributes": True}` for ORM mode, proper validati
 | 🟡 35 | No monitoring/alerting | Low | No error tracking (Sentry, etc.) |
 | 🟡 36 | No Prettier/VSCode config | Low | No standardized code formatting config |
 
-**Progress Summary**: Of 36 originally identified gaps, **20 resolved** ✅, 1 in progress 🔄, **15 remain** ❌
+**Progress Summary**: Of 36 originally identified gaps, **29 resolved** ✅, **7 remain** ❌
 
 ---
 
@@ -383,47 +383,35 @@ All use `model_config = {"from_attributes": True}` for ORM mode, proper validati
 
 ## 4.1 Code Quality Issues
 
-| # | Location | Issue | Severity |
-|---|----------|-------|----------|
-| 1 | `evaluation.py` line ~332 | `_to_eval_response` uses bare `try/except` catching all `json.JSONDecodeError, TypeError` | Low |
-| 2 | `question_service.py` | Duplicate `_get_llm()` function (also in evaluator_service.py) | Medium — extract to shared util |
-| 3 | `rag_service.py` | `build_vector_store` creates placeholder document for empty input — fragile | Low |
-| 4 | `rag_service.py` | FAISS `allow_dangerous_deserialization=True` | Medium — security concern for production |
-| 5 | `config.py` | `Settings` class uses `os.getenv` — no validation library (pydantic-settings) | Low |
-| 6 | `Evaluation` model | `criterion_scores` stored as JSON string in TEXT column | Low — works but not queryable |
-| 7 | Multiple files | No type hints on some functions (e.g., `_merge_results` returns `tuple[str, float]` but not annotated) | Low |
-| 8 | `evaluation.py` | `_run_evaluation` is a private function imported elsewhere — should be public or in service layer | Medium |
-| 9 | `evaluation.py` | `defaultdict(lambda: [0.0, 0.0])` — magic list use | Low |
-
-## 4.2 Architectural Concerns
-
-| # | Concern | Details |
-|---|---------|---------|
-| 1 | **Service layer bypassed** | `_run_evaluation` is in `api/evaluation.py`, not in a service module | Business logic in API layer |
-| 2 | **Single-module LLM config** | Each service has its own `_get_llm()` with hardcoded model name | Should be centralized |
-| 3 | **No background task queue** | OCR and evaluation run synchronously in request thread | Blocks for large docs |
-| 4 | **No caching layer** | Every evaluation runs fresh, no result caching | Expensive with Gemini API |
-| 5 | **Frontend no state management** | No React Query, Zustand, or Context for shared state | Props drilling for shared data |
+| # | Location | Issue | Severity | Status |
+|---|----------|-------|----------|--------|
+| 1 | `evaluator_service.py` | Bare `try/except` catching `json.JSONDecodeError, TypeError` | Low | ✅ Fixed with typed parsing |
+| 2 | `question_service.py` | Centralized `get_llm()` | Medium | ✅ Shared in `services/ai_config.py` |
+| 3 | `rag_service.py` | `build_vector_store` creates placeholder document for empty input | Low | Open |
+| 4 | `rag_service.py` | FAISS `allow_dangerous_deserialization=True` | Medium | Open |
+| 5 | `config.py` | `pydantic-settings` validation | Low | ✅ Resolved with `SettingsConfigDict` & validators |
+| 6 | `Evaluation` model | `criterion_scores` stored as JSON string in TEXT column | Low | Works as designed |
+| 7 | Multiple files | Type hints on service functions | Low | Open |
+| 8 | `evaluation.py` | `_run_evaluation` in API router | Medium | ✅ Moved to `evaluator_service.py` |
+| 9 | `evaluation.py` | `defaultdict(lambda: [0.0, 0.0])` | Low | Open |
 
 ---
 
 # 5. Execution Plan (Revised)
 
-> **Status**: Phases 1–4 are substantially complete. The plan below is revised to reflect current progress and reprioritize remaining work.
-
-## ✅ Completed (Phases 1–4)
+## ✅ Completed (Phases 1–5)
 
 ### Phase 1 — Foundation & Polish
 | # | Task | Status |
 |---|------|--------|
 | 1.1 | Extract shared `_get_llm()` to central AI config module | ✅ `services/ai_config.py` |
-| 1.2 | Add `.env.example` with all required vars | ❌ Still missing |
-| 1.3 | Move `_run_evaluation` from API to services layer | ❌ Still in `api/evaluation.py` |
-| 1.4 | Fix `index.html` title → "PaperPilot" | ❌ Still says "Mainframe" |
-| 1.5 | Remove or gate off `MainframeLanding` route | ❌ Still exposed |
+| 1.2 | Add `.env.example` with all required vars | ✅ Complete |
+| 1.3 | Move `_run_evaluation` from API to services layer | ✅ Complete |
+| 1.4 | Fix `index.html` title → "PaperPilot" | ✅ Complete |
+| 1.5 | Remove or gate off `MainframeLanding` route | ✅ Complete |
 | 1.6 | Add loading skeleton components | ✅ `Skeleton.tsx` with 6 patterns |
 | 1.7 | Add error boundary | ✅ `ErrorBoundary.tsx` |
-| 1.8 | Add `pydantic-settings` for config validation | ❌ Still uses `os.getenv` |
+| 1.8 | Add `pydantic-settings` for config validation | ✅ Complete |
 
 ### Phase 2 — Enhanced Frontend UX
 | # | Task | Status |
@@ -444,15 +432,15 @@ All use `model_config = {"from_attributes": True}` for ORM mode, proper validati
 | # | Task | Status |
 |---|------|--------|
 | 3.1 | Add Alembic migrations | ✅ `alembic/` with initial migrations |
-| 3.2 | PostgreSQL support | ❌ Still SQLite-only |
+| 3.2 | PostgreSQL support | ✅ `asyncpg` + pooling + URI normalization |
 | 3.3 | Add request rate limiting | ✅ SlowAPI middleware |
-| 3.4 | Add file magic-byte validation | ❌ Still missing |
+| 3.4 | Add file magic-byte validation | ✅ `validate_magic_bytes` |
 | 3.5 | Add document preview endpoint | ❌ Still missing |
-| 3.6 | Add CSV/PDF export for reports | ❌ Still missing |
+| 3.6 | Add CSV/PDF export for reports | ✅ CSV gradebook export |
 | 3.7 | Add pagination query params | ✅ All list endpoints paginated |
-| 3.8 | Add request logging middleware | ❌ Still missing |
+| 3.8 | Add request logging middleware | ✅ `RequestLoggingMiddleware` |
 | 3.9 | Centralize LLM config | ✅ `services/ai_config.py` |
-| 3.10 | Add health check details | ❌ Still minimal |
+| 3.10 | Add health check details | ✅ `/health`, `/health/live`, `/health/ready` |
 
 ### Phase 4 — Authentication & Multi-Tenancy
 | # | Task | Status |
@@ -461,39 +449,32 @@ All use `model_config = {"from_attributes": True}` for ORM mode, proper validati
 | 4.2 | Add JWT auth | ✅ Login/register/refresh |
 | 4.3 | Auth middleware/protected routes | ✅ `middleware/rate_limiter.py`, `ProtectedRoute.tsx` |
 | 4.4 | Role-based access control (teacher vs student) | ✅ `UserRole` enum + guards |
-| 4.5 | Scope exams/documents to user | ❌ Still global (no user isolation) |
+| 4.5 | Scope exams/documents to user | ✅ All queries isolated by `user_id` |
 | 4.6 | Login/register pages (frontend) | ✅ `Login.tsx`, `Register.tsx` |
 | 4.7 | Auth context + token management | ✅ `AuthContext.tsx` |
 | 4.8 | Protected routes with redirect | ✅ `ProtectedRoute.tsx` wrapper |
 
----
-
-## Phase 5 — Production Hardening (Next Priorities → ~2 weeks)
-
-### Goal
-Complete the last critical gaps: production database, Docker, data isolation, and polish.
-
-### Tasks
-
-| # | Task | Effort | Priority |
-|---|------|--------|----------|
-| 5.1 | **PostgreSQL support** — Add asyncpg, update connection string, test CI matrix | 1 hr | 🔴 High |
-| 5.2 | **Docker + docker-compose** — Backend + frontend containers, nginx reverse proxy | 2 hr | 🔴 High |
-| 5.3 | **Add `.env.example`** — Document all required env vars | 15 min | 🔴 High |
-| 5.4 | **User data isolation** — Scope exams/documents/submissions to user_id | 2 hr | 🔴 High |
-| 5.5 | **File magic-byte validation** — Validate content-type, not just extension | 30 min | 🟡 Medium |
-| 5.6 | **Fix `index.html` title** → "PaperPilot" | 1 min | 🟡 Medium |
-| 5.7 | **Remove/gate `MainframeLanding` route** | 5 min | 🟡 Medium |
-| 5.8 | **Add pydantic-settings** for config validation | 15 min | 🟡 Medium |
-| 5.9 | **Add request logging middleware** | 30 min | 🟡 Medium |
-| 5.10 | **Add health check details** (DB, AI API key) | 30 min | 🟡 Medium |
-| 5.11 | **Move `_run_evaluation` to service layer** | 1 hr | 🟡 Medium |
+### Phase 5 — Production Hardening
+| # | Task | Status |
+|---|------|--------|
+| 5.1 | PostgreSQL support (asyncpg, pooling, URI normalization) | ✅ `connection.py`, `alembic/env.py` |
+| 5.2 | Docker + docker-compose (backend, frontend, nginx, healthchecks) | ✅ Multi-container orchestration |
+| 5.3 | Add `.env.example` template with comprehensive docs | ✅ Complete |
+| 5.4 | User data isolation (scoped queries and pipeline to user_id) | ✅ Complete |
+| 5.5 | File magic-byte validation (PDF, PNG, JPEG, WEBP header signatures) | ✅ `file_service.py` + tests |
+| 5.6 | Fix `index.html` title & meta branding to PaperPilot | ✅ Complete |
+| 5.7 | Remove deprecated `MainframeLanding` page | ✅ Complete |
+| 5.8 | Harden `pydantic-settings` with CORS and rate limit settings | ✅ `config.py` + validators |
+| 5.9 | Add structured request logging middleware with request tracing | ✅ `request_logger.py` |
+| 5.10 | Add health check details (`/health`, `/health/live`, `/health/ready`) | ✅ `main.py` + tests |
+| 5.11 | Decouple evaluation pipeline into service layer | ✅ `evaluator_service.py` |
 
 ### Verification
-- All 29 backend tests pass
-- `docker-compose up` starts full stack
-- PostgreSQL: create DB → run migrations → seed → query
-- New user sees empty state (isolation works)
+- All 37 backend tests pass (unit, evaluation, health, file service, database)
+- Frontend build and lint clean (`npm run build`, `npm run lint`)
+- Docker Compose multi-stage setup with health check dependencies verified
+- Database URL normalization ensures PostgreSQL asyncpg and SQLite compatibility
+- Tenant scoping prevents IDOR vulnerabilities across exams, documents, and evaluations
 
 ---
 
