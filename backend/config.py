@@ -37,6 +37,14 @@ class Settings(BaseSettings):
     # Auth / JWT
     JWT_SECRET: str = ""
 
+    # CORS & Security
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+    ]
+    RATE_LIMIT_PER_MINUTE: int = 60
+
     # OCR
     OCR_LANGUAGES: list[str] = ["en"]
     OCR_GPU: bool = False
@@ -52,6 +60,16 @@ class Settings(BaseSettings):
                 "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
             )
         return v
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def _split_cors_origins(cls, v: object) -> list[str]:
+        """Accept a comma-separated string from the .env file or a list."""
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        if isinstance(v, list):
+            return [str(origin).strip() for origin in v if origin]
+        return ["http://localhost:5173", "http://localhost:3000"]
 
     @field_validator("OCR_LANGUAGES", mode="before")
     @classmethod
