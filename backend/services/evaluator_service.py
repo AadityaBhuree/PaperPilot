@@ -152,14 +152,22 @@ async def evaluate_answer(inputs: EvaluationInput) -> dict[str, object]:
     return output
 
 
-async def run_evaluation(submission_id: str, db: AsyncSession) -> EvaluateSubmissionResponse:
+async def run_evaluation(
+    submission_id: str,
+    db: AsyncSession,
+    user_id: str | None = None,
+) -> EvaluateSubmissionResponse:
     """Core evaluation pipeline shared by single and batch endpoints."""
-    # 1. Load submission
-    result = await db.execute(
+    # 1. Load submission (scoped to user_id if provided)
+    query = (
         select(StudentSubmission)
         .where(StudentSubmission.id == submission_id)
         .options(selectinload(StudentSubmission.document))
     )
+    if user_id is not None:
+        query = query.join(Exam, StudentSubmission.exam_id == Exam.id).where(Exam.user_id == user_id)
+
+    result = await db.execute(query)
     submission = result.scalar_one_or_none()
     if submission is None:
         raise HTTPException(status_code=404, detail=f"Submission {submission_id} not found")
@@ -170,7 +178,7 @@ async def run_evaluation(submission_id: str, db: AsyncSession) -> EvaluateSubmis
     ocr_text = await ensure_ocr_text(doc, db)
 
     # 3. Load exam with questions, answer keys, and rubrics
-    exam_result = await db.execute(
+    exam_query = (
         select(Exam)
         .where(Exam.id == submission.exam_id)
         .options(
@@ -180,6 +188,10 @@ async def run_evaluation(submission_id: str, db: AsyncSession) -> EvaluateSubmis
             .selectinload(Question.rubrics),
         )
     )
+    if user_id is not None:
+        exam_query = exam_query.where(Exam.user_id == user_id)
+
+    exam_result = await db.execute(exam_query)
     exam = exam_result.scalar_one_or_none()
     if exam is None:
         raise HTTPException(status_code=404, detail="Exam not found")

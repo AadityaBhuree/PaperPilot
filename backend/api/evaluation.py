@@ -174,7 +174,7 @@ async def evaluate_submission(
     user: User = Depends(get_current_user),
 ) -> EvaluateSubmissionResponse:
     """Run the full evaluation pipeline on a single student submission."""
-    return await run_evaluation(submission_id, db)
+    return await run_evaluation(submission_id, db, user_id=user.id)
 
 
 # ---------------------------------------------------------------------------
@@ -199,7 +199,7 @@ async def batch_evaluate(
 
     for sid in body.submission_ids:
         try:
-            eval_resp = await run_evaluation(sid, db)
+            eval_resp = await run_evaluation(sid, db, user_id=user.id)
 
             # Fetch student name
             sub_result = await db.execute(
